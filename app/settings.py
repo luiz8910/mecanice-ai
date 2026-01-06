@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Database (Postgres + pgvector)
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/mecanice"
 
+    # Simple Admin auth (MVP)
+    ADMIN_TOKEN: str = "change-me"
+
     # Cache
     CACHE_TTL_SECONDS: int = 60 * 60 * 24 * 30  # 30 days
 

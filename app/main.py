@@ -8,10 +8,13 @@ from .llm_client import generate_recommendation, LLMError
 from .cache import TTLCache, build_cache_key
 from .settings import settings
 from .rag import retrieve_context
+from .mechanics_router import router as mechanics_router
 
 
 app = FastAPI(title="Mecanice MVP (IA-first + RAG)", version="0.2.0")
 cache = TTLCache(ttl_seconds=settings.CACHE_TTL_SECONDS)
+
+app.include_router(mechanics_router, prefix="/mechanics", tags=["mechanics"])
 
 
 @app.get("/health")

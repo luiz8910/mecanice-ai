@@ -98,3 +98,32 @@ curl -X POST http://127.0.0.1:8000/parts/recommendations \
   - filtrar por `source_type`,
   - armazenar metadados mais ricos,
   - criar índices por marca/modelo/ano (para acelerar).
+
+
+## 6) Migration de mecânicos/oficinas
+Execute também:
+```bash
+psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/002_create_mechanics.sql
+```
+
+### Admin token (MVP)
+No `.env`:
+```env
+ADMIN_TOKEN=change-me
+```
+
+### Teste rápido (criar mecânico)
+```bash
+curl -X POST http://127.0.0.1:8000/mechanics \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: change-me" \
+  -d '{
+    "name":"Oficina do Zé",
+    "whatsapp_phone_e164":"+5511999999999",
+    "city":"São Paulo",
+    "state_uf":"SP",
+    "status":"active",
+    "categories":["freios"],
+    "notes":"tester"
+  }'
+```
