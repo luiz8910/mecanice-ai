@@ -11,5 +11,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register handlers on a FastAPI app instance for AppError subclasses."""
 
     @app.exception_handler(AppError)
-    async def _handle_app_error(request: Request, exc: AppError):
+    def _handle_app_error(request: Request, exc: AppError):
         return to_json_response(exc)
