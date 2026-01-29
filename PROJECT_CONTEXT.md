@@ -96,16 +96,16 @@ This project is designed to be clean and maintainable, with **clear separation o
   - Queue/event integration (if used)
   - External services adapters (LLM provider, etc.)
   
-Note: the repository was refactored to follow this hexagonal structure during development.
-Current layout added by the refactor:
+Note: the project is intended to follow this hexagonal structure, but the actual repository layout may differ; treat this as architectural guidance rather than a guaranteed directory listing.
+Example layout that fits this architecture:
 - `domain/` — pure domain entities and ports (interfaces/protocols).
 - `app/` — use-cases (application services), FastAPI routers and wiring.
-- `infrastructure/` — concrete adapters: Postgres repo (`infrastructure/repos/postgres_quote_repo.py`) and WhatsApp adapter (`infrastructure/messaging/whatsapp_adapter.py`).
+- `infrastructure/` — concrete adapters such as persistence repositories and messaging/WhatsApp integration.
 
-The refactor also added:
-- `docker-compose.yml` and `scripts/wait_for_db.sh` for local Postgres+pgvector
-- `migrations/003_create_quotes.sql` (tables for quote_requests, conversations, messages, quote_offers)
-- `app/use_cases/` with `create_and_broadcast_quote` and `ingest_inbound_message` use-cases
+Example supporting infrastructure you might introduce:
+- `docker-compose.yml` and helper scripts (for running local databases such as Postgres+pgvector, if used)
+- Database migrations to create tables for quote requests, conversations, messages, and quote offers
+- Application-layer use case modules for actions like creating/broadcasting quotes and ingesting inbound messages
 
 This organization keeps domain rules IO-free and makes swapping adapters easier (e.g., Postgres -> DynamoDB).
 - (Optional) **interfaces/** or **api/**
