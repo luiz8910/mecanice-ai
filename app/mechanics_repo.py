@@ -7,14 +7,7 @@ from psycopg.rows import dict_row
 
 from .db import get_pool
 from .mechanics_schemas import MechanicCreate, MechanicUpdate, MechanicStatus
-
-
-class NotFoundError(RuntimeError):
-    pass
-
-
-class DuplicatePhoneError(RuntimeError):
-    pass
+from .exceptions import NotFoundError, DuplicatePhoneError
 
 
 def create_mechanic(payload: MechanicCreate) -> Dict[str, Any]:
