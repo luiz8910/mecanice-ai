@@ -18,8 +18,11 @@ jobs:
           POSTGRES_DB: mecanice
         ports:
           - 5432:5432
+        # Pass the entire health command as a single quoted string so docker
+        # interprets it correctly; otherwise flags after the command are split
+        # and treated as docker options leading to errors like `unknown shorthand flag`.
         options: >-
-          --health-cmd pg_isready -U postgres -d mecanice
+          --health-cmd "pg_isready -U postgres -d mecanice"
           --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
