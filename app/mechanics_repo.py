@@ -20,6 +20,17 @@ class DuplicatePhoneError(RuntimeError):
 def create_mechanic(payload: MechanicCreate) -> Dict[str, Any]:
     pool = get_pool()
     data = payload.model_dump()
+    def _serialize_row(row: Dict[str, Any]) -> Dict[str, Any]:
+        if not row:
+            return row
+        for k in ("created_at", "updated_at"):
+            v = row.get(k)
+            if v is not None:
+                try:
+                    row[k] = v.isoformat()
+                except Exception:
+                    row[k] = str(v)
+        return row
 
     with pool.connection() as conn:
         conn.row_factory = dict_row
@@ -40,7 +51,7 @@ def create_mechanic(payload: MechanicCreate) -> Dict[str, Any]:
                 )
                 row = cur.fetchone()
                 conn.commit()
-                return row
+                return _serialize_row(row)
         except psycopg.errors.UniqueViolation as e:
             conn.rollback()
             raise DuplicatePhoneError("whatsapp_phone_e164 already exists") from e
@@ -48,6 +59,18 @@ def create_mechanic(payload: MechanicCreate) -> Dict[str, Any]:
 
 def get_mechanic(mechanic_id: int) -> Dict[str, Any]:
     pool = get_pool()
+    def _serialize_row(row: Dict[str, Any]) -> Dict[str, Any]:
+        if not row:
+            return row
+        for k in ("created_at", "updated_at"):
+            v = row.get(k)
+            if v is not None:
+                try:
+                    row[k] = v.isoformat()
+                except Exception:
+                    row[k] = str(v)
+        return row
+
     with pool.connection() as conn:
         conn.row_factory = dict_row
         with conn.cursor() as cur:
@@ -55,11 +78,23 @@ def get_mechanic(mechanic_id: int) -> Dict[str, Any]:
             row = cur.fetchone()
             if not row:
                 raise NotFoundError("mechanic not found")
-            return row
+            return _serialize_row(row)
 
 
 def list_mechanics(limit: int = 50, offset: int = 0, status: Optional[MechanicStatus] = None) -> List[Dict[str, Any]]:
     pool = get_pool()
+    def _serialize_row(row: Dict[str, Any]) -> Dict[str, Any]:
+        if not row:
+            return row
+        for k in ("created_at", "updated_at"):
+            v = row.get(k)
+            if v is not None:
+                try:
+                    row[k] = v.isoformat()
+                except Exception:
+                    row[k] = str(v)
+        return row
+
     with pool.connection() as conn:
         conn.row_factory = dict_row
         with conn.cursor() as cur:
@@ -73,7 +108,8 @@ def list_mechanics(limit: int = 50, offset: int = 0, status: Optional[MechanicSt
                     "SELECT * FROM mechanics ORDER BY id DESC LIMIT %s OFFSET %s;",
                     (limit, offset),
                 )
-            return list(cur.fetchall())
+            rows = list(cur.fetchall())
+            return [_serialize_row(r) for r in rows]
 
 
 def update_mechanic(mechanic_id: int, payload: MechanicUpdate) -> Dict[str, Any]:
@@ -116,6 +152,14 @@ def update_mechanic(mechanic_id: int, payload: MechanicUpdate) -> Dict[str, Any]
                 if not row:
                     raise NotFoundError("mechanic not found")
                 conn.commit()
+                # serialize datetimes
+                for k in ("created_at", "updated_at"):
+                    v = row.get(k)
+                    if v is not None:
+                        try:
+                            row[k] = v.isoformat()
+                        except Exception:
+                            row[k] = str(v)
                 return row
         except psycopg.errors.UniqueViolation as e:
             conn.rollback()
@@ -140,4 +184,11 @@ def set_mechanic_status(mechanic_id: int, status: MechanicStatus) -> Dict[str, A
             if not row:
                 raise NotFoundError("mechanic not found")
             conn.commit()
+            for k in ("created_at", "updated_at"):
+                v = row.get(k)
+                if v is not None:
+                    try:
+                        row[k] = v.isoformat()
+                    except Exception:
+                        row[k] = str(v)
             return row

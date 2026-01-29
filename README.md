@@ -54,7 +54,8 @@ EMBEDDINGS_PROVIDER=dummy
 ## 3) Instalar e rodar API
 ```bash
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+# Use the prepared module that registers the quotes router and hexagonal wiring:
+uvicorn app.app_with_quotes:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Health check:
@@ -122,6 +123,54 @@ curl -X POST http://127.0.0.1:8000/mechanics \
     "whatsapp_phone_e164":"+5511999999999",
     "city":"São Paulo",
     "state_uf":"SP",
+
+---
+
+## Local development (WSL) — Postgres + pgvector (docker-compose) & tests
+
+We include a `docker-compose.yml` and helper scripts to run Postgres with pgvector locally.
+
+1. Copy env sample:
+
+```bash
+cp .env.sample .env
+```
+
+2. Start Postgres+pgvector with Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+3. Wait for DB readiness (helper):
+
+```bash
+./scripts/wait_for_db.sh
+```
+
+4. Install Python deps and run the app (inside WSL):
+
+```bash
+python -m pip install -r requirements.txt
+uvicorn app.app_with_quotes:app --reload --host 0.0.0.0 --port 8000
+```
+
+5. Health check:
+
+```bash
+curl http://localhost:8000/health
+```
+
+6. Run unit tests (install pytest first):
+
+```bash
+python -m pip install pytest
+pytest -q
+```
+
+Notes:
+- The project was refactored toward a hexagonal structure: `domain/` (entities & ports), `app/` (use-cases + routers), and `infrastructure/` (adapters for Postgres and WhatsApp). The router module `app.app_with_quotes` wires adapters for local dev.
+- If you prefer the older `app.main:app` entrypoint, it still exists but the recommended entry is `app.app_with_quotes:app` to include the new quotes router wiring.
     "status":"active",
     "categories":["freios"],
     "notes":"tester"
