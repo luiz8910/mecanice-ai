@@ -14,7 +14,8 @@
     {
       "key": "admin_token",
       "value": "change-me",
-      "type": "string"
+      "type": "string",
+      "description": "Replace this placeholder with your actual admin token before sending any requests."
     }
   ],
   "item": [
