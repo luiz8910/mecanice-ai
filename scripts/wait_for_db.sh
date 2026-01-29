@@ -25,7 +25,14 @@ if [ "$count" -ge 120 ]; then
 fi
 
 echo "Verifying pg_isready inside container..."
+pg_count=0
+max_pg_retries=120
 until docker compose exec -T db pg_isready -U postgres -d mecanice >/dev/null 2>&1; do
+  pg_count=$((pg_count+1))
+  if [ "$pg_count" -ge "$max_pg_retries" ]; then
+    echo "Timed out waiting for pg_isready inside container" >&2
+    exit 1
+  fi
   sleep 1
 done
 
