@@ -1,0 +1,133 @@
+{
+  "info": {
+    "_postman_id": "mecanice-collection-001",
+    "name": "Mecanice API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "change-me",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mechanics - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Admin-Token", "value": "{{admin_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Oficina do Zé\",\n  \"whatsapp_phone_e164\": \"+5511999999999\",\n  \"city\": \"São Paulo\",\n  \"state_uf\": \"SP\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/mechanics/mechanics",
+          "host": ["{{base_url}}"],
+          "path": ["mechanics","mechanics"]
+        }
+      }
+    },
+    {
+      "name": "Mechanics - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/mechanics/mechanics?limit=50&offset=0",
+          "host": ["{{base_url}}"],
+          "path": ["mechanics","mechanics"],
+          "query": [
+            { "key": "limit", "value": "50" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mechanics - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id",
+          "host": ["{{base_url}}"],
+          "path": ["mechanics","mechanics",":mechanic_id"]
+        }
+      }
+    },
+    {
+      "name": "Mechanics - Update (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Admin-Token", "value": "{{admin_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Oficina do João\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id",
+          "host": ["{{base_url}}"],
+          "path": ["mechanics","mechanics",":mechanic_id"]
+        }
+      }
+    },
+    {
+      "name": "Mechanics - Set Status",
+      "request": {
+        "method": "PATCH",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id/status?status=blocked",
+          "host": ["{{base_url}}"],
+          "path": ["mechanics","mechanics",":mechanic_id","status"],
+          "query": [ { "key": "status", "value": "blocked" } ]
+        }
+      }
+    },
+    {
+      "name": "Parts - Recommendations",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"request_id\": \"req_123\",\n  \"user_text\": \"Qual pastilha do Vectra 2000?\",\n  \"images_base64\": [],\n  \"known_fields\": {\n    \"axle\": \"unknown\",\n    \"rear_brake_type\": \"unknown\",\n    \"engine\": \"unknown\",\n    \"abs\": \"unknown\"\n  },\n  \"context_sources\": []\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/parts/recommendations",
+          "host": ["{{base_url}}"],
+          "path": ["parts","recommendations"]
+        }
+      }
+    }
+  ]
+}
