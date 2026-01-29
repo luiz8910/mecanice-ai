@@ -169,8 +169,8 @@ pytest -q
 ```
 
 Notes:
-- The project was refactored toward a hexagonal structure: `domain/` (entities & ports), `app/` (use-cases + routers), and `infrastructure/` (adapters for Postgres and WhatsApp). The router module `app.app_with_quotes` wires adapters for local dev.
-- If you prefer the older `app.main:app` entrypoint, it still exists but the recommended entry is `app.app_with_quotes:app` to include the new quotes router wiring.
+- The project is being refactored toward a hexagonal-style structure (`domain/` for entities & ports, `app/` for use-cases + routers, and `infrastructure/` for adapters such as Postgres and WhatsApp). At present, most code still resides under `app/`, and some of these directories may not yet exist or may be incomplete. The router module `app.app_with_quotes` wires the current adapters for local development.
+- If you prefer the older `app.main:app` entrypoint, it still exists, but the recommended entry is `app.app_with_quotes:app` to include the new quotes router wiring.
     "status":"active",
     "categories":["freios"],
     "notes":"tester"
