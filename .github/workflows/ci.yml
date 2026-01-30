@@ -64,5 +64,5 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mecanice
         run: |
-          # Run pytest explicitly on the tests/ folder to ensure discovery
-          pytest -q tests
+          # Use pytest discovery (don't rely on a literal `tests` path)
+          pytest -q
