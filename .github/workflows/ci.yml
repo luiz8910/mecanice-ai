@@ -57,8 +57,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mecanice
         run: |
-          psql "$DATABASE_URL" -f migrations/001_create_rag_chunks.sql || true
-          psql "$DATABASE_URL" -f migrations/002_create_mechanics.sql || true
+          psql "$DATABASE_URL" -f migrations/001_create_rag_chunks.sql
+          psql "$DATABASE_URL" -f migrations/002_create_mechanics.sql
 
       - name: Run tests
         env:
