@@ -27,24 +27,39 @@ psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/001_
 ---
 
 ## 2) Configurar .env
-Crie um `.env` na raiz:
+Crie um `.env` na raiz. O projeto aceita tanto as variáveis `LLM_*`/`EMBEDDINGS_*`
+quanto os aliases legados `OPENAI_*`. As primeiras têm prioridade quando ambas
+estão presentes.
+
+Exemplo mínimo (`LLM_*` + `EMBEDDINGS_*`):
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mecanice
+
+# LLM (chat/completions)
+LLM_PROVIDER=openai_compatible
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_API_KEY=SEU_TOKEN
+LLM_MODEL=gpt-4.1-mini
 
 # Embeddings (recomendado)
 EMBEDDINGS_PROVIDER=openai_compatible
 EMBEDDINGS_BASE_URL=https://api.openai.com/v1
 EMBEDDINGS_API_KEY=SEU_TOKEN
 EMBEDDINGS_MODEL=text-embedding-3-small
-
-# LLM
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=SEU_TOKEN
-LLM_MODEL=gpt-4.1-mini
 ```
 
-> Para desenvolvimento local sem embeddings pagos:
+Se você usa nomes legados do OpenAI, eles também funcionarão como fallback:
+
+```env
+# Legacy/OpenAI aliases (opcionais - usados somente se LLM_* não estiverem setadas)
+OPENAI_API_KEY=SEU_TOKEN
+OPENAI_MODEL_PRIMARY=gpt-4o-mini
+OPENAI_MODEL_FALLBACK=gpt-5-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+```
+
+Para desenvolvimento local sem embeddings pagos:
 ```env
 EMBEDDINGS_PROVIDER=dummy
 ```

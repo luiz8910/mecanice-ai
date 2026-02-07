@@ -14,7 +14,7 @@ from .mechanics_repo import (
     DuplicatePhoneError,
 )
 
-router = APIRouter(prefix="/mechanics", tags=["mechanics"])
+router = APIRouter(tags=["mechanics"])
 
 
 @router.post("", response_model=MechanicRead, dependencies=[Depends(require_admin)])

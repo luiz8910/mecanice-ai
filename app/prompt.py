@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List
-from .models import ContextSource, RecommendationRequest
+from .dtos import ContextSource, RecommendationRequest
 from .settings import settings
 
 

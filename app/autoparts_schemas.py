@@ -6,7 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 
-MechanicStatus = Literal["active", "blocked"]
+AutoPartStatus = Literal["active", "paused"]
 _E164_RE = re.compile(r"^\+[1-9]\d{7,14}$")
 
 BR_UF = {
@@ -14,17 +14,19 @@ BR_UF = {
 }
 
 
-class MechanicBase(BaseModel):
-    name: str = Field(min_length=2, max_length=120)
+class AutoPartBase(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
     whatsapp_phone_e164: str = Field(description="WhatsApp phone in E.164, e.g. +5511999999999")
+    address: Optional[str] = Field(default=None, max_length=200)
     city: str = Field(min_length=2, max_length=80)
     state_uf: str = Field(min_length=2, max_length=2, description="UF, e.g. SP")
-    status: MechanicStatus = "active"
+    status: AutoPartStatus = "active"
 
-    address: Optional[str] = Field(default=None, max_length=200)
-    email: Optional[str] = Field(default=None, max_length=120)
-    responsible_name: Optional[str] = Field(default=None, max_length=120)
+    opening_hours: Optional[str] = Field(default=None, max_length=200)
+    delivery_types: List[str] = Field(default_factory=list)
+    radius_km: Optional[float] = None
     categories: List[str] = Field(default_factory=list)
+    responsible_name: Optional[str] = Field(default=None, max_length=120)
     notes: Optional[str] = Field(default=None, max_length=500)
 
     @field_validator("whatsapp_phone_e164")
@@ -43,14 +45,30 @@ class MechanicBase(BaseModel):
             raise ValueError("state_uf must be a valid Brazilian UF")
         return v
 
+    @field_validator("delivery_types")
+    @classmethod
+    def normalize_delivery(cls, v: List[str]) -> List[str]:
+        out = []
+        for item in (v or []):
+            s = str(item).strip().lower()
+            if s:
+                out.append(s)
+        seen = set()
+        uniq = []
+        for s in out:
+            if s not in seen:
+                seen.add(s)
+                uniq.append(s)
+        return uniq
+
     @field_validator("categories")
     @classmethod
     def normalize_categories(cls, v: List[str]) -> List[str]:
         out = []
         for item in (v or []):
-            s = str(item).strip()
+            s = str(item).strip().lower()
             if s:
-                out.append(s.lower())
+                out.append(s)
         seen = set()
         uniq = []
         for s in out:
@@ -60,21 +78,23 @@ class MechanicBase(BaseModel):
         return uniq
 
 
-class MechanicCreate(MechanicBase):
+class AutoPartCreate(AutoPartBase):
     pass
 
 
-class MechanicUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=2, max_length=120)
+class AutoPartUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     whatsapp_phone_e164: Optional[str] = None
+    address: Optional[str] = Field(default=None, max_length=200)
     city: Optional[str] = Field(default=None, min_length=2, max_length=80)
     state_uf: Optional[str] = Field(default=None, min_length=2, max_length=2)
-    status: Optional[MechanicStatus] = None
+    status: Optional[AutoPartStatus] = None
 
-    address: Optional[str] = Field(default=None, max_length=200)
-    email: Optional[str] = Field(default=None, max_length=120)
-    responsible_name: Optional[str] = Field(default=None, max_length=120)
+    opening_hours: Optional[str] = Field(default=None, max_length=200)
+    delivery_types: Optional[List[str]] = None
+    radius_km: Optional[float] = None
     categories: Optional[List[str]] = None
+    responsible_name: Optional[str] = Field(default=None, max_length=120)
     notes: Optional[str] = Field(default=None, max_length=500)
 
     @field_validator("whatsapp_phone_e164")
@@ -97,6 +117,24 @@ class MechanicUpdate(BaseModel):
             raise ValueError("state_uf must be a valid Brazilian UF")
         return v
 
+    @field_validator("delivery_types")
+    @classmethod
+    def normalize_delivery(cls, v: List[str] | None) -> List[str] | None:
+        if v is None:
+            return None
+        out = []
+        for item in v:
+            s = str(item).strip().lower()
+            if s:
+                out.append(s)
+        seen = set()
+        uniq = []
+        for s in out:
+            if s not in seen:
+                seen.add(s)
+                uniq.append(s)
+        return uniq
+
     @field_validator("categories")
     @classmethod
     def normalize_categories(cls, v: List[str] | None) -> List[str] | None:
@@ -104,9 +142,9 @@ class MechanicUpdate(BaseModel):
             return None
         out = []
         for item in v:
-            s = str(item).strip()
+            s = str(item).strip().lower()
             if s:
-                out.append(s.lower())
+                out.append(s)
         seen = set()
         uniq = []
         for s in out:
@@ -116,7 +154,7 @@ class MechanicUpdate(BaseModel):
         return uniq
 
 
-class MechanicRead(MechanicBase):
+class AutoPartRead(AutoPartBase):
     id: int
     created_at: datetime
     updated_at: datetime

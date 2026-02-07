@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 
-from .models import RecommendationRequest, RecommendationResponse
+from .dtos import RecommendationRequest, RecommendationResponse
 from .prompt import build_messages
-from .llm_client import generate_recommendation, LLMError
+from .llm_service import generate_recommendation, LLMError
 from .cache import TTLCache, build_cache_key
 from .settings import settings
 from .rag import retrieve_context
 from .mechanics_router import router as mechanics_router
+from .autoparts_router import router as autoparts_router
 from .exceptions import register_exception_handlers
 
 
@@ -16,6 +17,7 @@ app = FastAPI(title="Mecanice MVP (IA-first + RAG)", version="0.2.0")
 cache = TTLCache(ttl_seconds=settings.CACHE_TTL_SECONDS)
 
 app.include_router(mechanics_router, prefix="/mechanics", tags=["mechanics"])
+app.include_router(autoparts_router, prefix="/autoparts", tags=["autoparts"])
 
 # register global app exception handlers for domain errors
 register_exception_handlers(app)
@@ -39,7 +41,14 @@ async def parts_recommendations(req: RecommendationRequest):
         return cached
 
     # 3) LLM: sempre retorna JSON válido e validado no schema
-    messages = build_messages(req)
+    messages = build_messages(
+        system_prompt=settings.LLM_SYSTEM_PROMPT,
+        user_text=req.user_text,
+        image_url=req.image_url,
+        image_b64=req.image_b64,
+        image_bytes=req.image_bytes,
+        mime_type=req.image_mime_type,
+    )
     try:
         result = await generate_recommendation(messages)
     except LLMError as e:
