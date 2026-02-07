@@ -48,9 +48,9 @@
           "raw": "{\n  \"name\": \"Oficina do Zé\",\n  \"whatsapp_phone_e164\": \"+5511999999999\",\n  \"city\": \"São Paulo\",\n  \"state_uf\": \"SP\"\n}"
         },
         "url": {
-          "raw": "{{base_url}}/mechanics/mechanics",
+          "raw": "{{base_url}}/mechanics",
           "host": ["{{base_url}}"],
-          "path": ["mechanics","mechanics"]
+          "path": ["mechanics"]
         }
       }
     },
@@ -60,9 +60,9 @@
         "method": "GET",
         "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
         "url": {
-          "raw": "{{base_url}}/mechanics/mechanics?limit=50&offset=0",
+          "raw": "{{base_url}}/mechanics?limit=50&offset=0",
           "host": ["{{base_url}}"],
-          "path": ["mechanics","mechanics"],
+          "path": ["mechanics"],
           "query": [
             { "key": "limit", "value": "50" },
             { "key": "offset", "value": "0" }
@@ -76,9 +76,9 @@
         "method": "GET",
         "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
         "url": {
-          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id",
+          "raw": "{{base_url}}/mechanics/:mechanic_id",
           "host": ["{{base_url}}"],
-          "path": ["mechanics","mechanics",":mechanic_id"]
+          "path": ["mechanics",":mechanic_id"]
         }
       }
     },
@@ -95,9 +95,9 @@
           "raw": "{\n  \"name\": \"Oficina do João\"\n}"
         },
         "url": {
-          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id",
+          "raw": "{{base_url}}/mechanics/:mechanic_id",
           "host": ["{{base_url}}"],
-          "path": ["mechanics","mechanics",":mechanic_id"]
+          "path": ["mechanics",":mechanic_id"]
         }
       }
     },
@@ -107,9 +107,9 @@
         "method": "PATCH",
         "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
         "url": {
-          "raw": "{{base_url}}/mechanics/mechanics/:mechanic_id/status?status=blocked",
+          "raw": "{{base_url}}/mechanics/:mechanic_id/status?status=blocked",
           "host": ["{{base_url}}"],
-          "path": ["mechanics","mechanics",":mechanic_id","status"],
+          "path": ["mechanics",":mechanic_id","status"],
           "query": [ { "key": "status", "value": "blocked" } ]
         }
       }
@@ -127,6 +127,86 @@
           "raw": "{{base_url}}/parts/recommendations",
           "host": ["{{base_url}}"],
           "path": ["parts","recommendations"]
+        }
+      }
+    }
+    ,
+    {
+      "name": "Autoparts - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Admin-Token", "value": "{{admin_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Auto Peças Central\",\n  \"whatsapp_phone_e164\": \"+5511999000111\",\n  \"city\": \"São Paulo\",\n  \"state_uf\": \"SP\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/autoparts",
+          "host": ["{{base_url}}"],
+          "path": ["autoparts"]
+        }
+      }
+    },
+    {
+      "name": "Autoparts - List",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/autoparts?limit=50&offset=0",
+          "host": ["{{base_url}}"],
+          "path": ["autoparts"],
+          "query": [
+            { "key": "limit", "value": "50" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Autoparts - Get by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/autoparts/:autopart_id",
+          "host": ["{{base_url}}"],
+          "path": ["autoparts",":autopart_id"]
+        }
+      }
+    },
+    {
+      "name": "Autoparts - Update (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Admin-Token", "value": "{{admin_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Auto Peças Nova\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/autoparts/:autopart_id",
+          "host": ["{{base_url}}"],
+          "path": ["autoparts",":autopart_id"]
+        }
+      }
+    },
+    {
+      "name": "Autoparts - Set Status",
+      "request": {
+        "method": "PATCH",
+        "header": [ { "key": "X-Admin-Token", "value": "{{admin_token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/autoparts/:autopart_id/status?status=paused",
+          "host": ["{{base_url}}"],
+          "path": ["autoparts",":autopart_id","status"],
+          "query": [ { "key": "status", "value": "paused" } ]
         }
       }
     }

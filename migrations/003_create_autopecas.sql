@@ -1,0 +1,2 @@
+-- DELETED: legacy migration for `autopecas` removed per cleanup request.
+-- Original file archived and neutralized to avoid accidental execution.

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 import anyio
 
-from .models import ContextSource
+from .dtos import ContextSource
 from .settings import settings
 from .embeddings import get_embeddings_provider
 from .db import search_chunks
