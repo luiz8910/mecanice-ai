@@ -1,0 +1,91 @@
+{
+  "info": {
+    "name": "Mecanice Bot — Hexagonal",
+    "description": "Coleção para testar a API hexagonal do bot (src/bot).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Cotação - Pastilha Freio Vectra",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requester_id\": \"mec_001\",\n  \"vehicle\": {\n    \"make\": \"Chevrolet\",\n    \"model\": \"Vectra\",\n    \"year\": \"2000\",\n    \"engine\": \"2.2 8v\"\n  },\n  \"parts\": [\n    {\n      \"part_number\": null,\n      \"description\": \"pastilha de freio dianteira\",\n      \"quantity\": 1\n    }\n  ],\n  \"context\": {\n    \"notes\": \"veículo com freio a disco nas 4 rodas\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/quotes/recommendation",
+          "host": ["{{base_url}}"],
+          "path": ["quotes", "recommendation"]
+        }
+      }
+    },
+    {
+      "name": "Cotação - Filtro Óleo Civic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requester_id\": \"mec_002\",\n  \"vehicle\": {\n    \"make\": \"Honda\",\n    \"model\": \"Civic\",\n    \"year\": \"2018\",\n    \"engine\": \"2.0 Flex\"\n  },\n  \"parts\": [\n    {\n      \"part_number\": \"15400-RTA-003\",\n      \"description\": \"filtro de óleo\",\n      \"quantity\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/quotes/recommendation",
+          "host": ["{{base_url}}"],
+          "path": ["quotes", "recommendation"]
+        }
+      }
+    },
+    {
+      "name": "Cotação - Mínima (só descrição)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requester_id\": \"mec_003\",\n  \"parts\": [\n    {\n      \"description\": \"bobina de ignição\",\n      \"quantity\": 1\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/quotes/recommendation",
+          "host": ["{{base_url}}"],
+          "path": ["quotes", "recommendation"]
+        }
+      }
+    }
+  ]
+}
