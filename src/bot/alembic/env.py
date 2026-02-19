@@ -53,7 +53,17 @@ for _m in _attempt_modules:
 
 def _get_url() -> str | None:
 	"""Return a database URL from env var or alembic config."""
-	return os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+	url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+	if not url:
+		return url
+	if url.startswith("postgresql+psycopg://"):
+		return url
+	if url.startswith("postgresql://"):
+		return "postgresql+psycopg://" + url[len("postgresql://") :]
+	if url.startswith("postgres://"):
+		rest = url[len("postgres://") :]
+		return "postgresql+psycopg://" + rest
+	return url
 
 
 def run_migrations_offline() -> None:

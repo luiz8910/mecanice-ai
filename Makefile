@@ -22,7 +22,7 @@ migrate:
 # Run migrations inside the DB container (requires docker compose running)
 migrate-docker:
 	# Run all SQL files mounted into /docker-entrypoint-initdb.d in sorted order
-	${DC} exec -T db bash -lc "for f in $(ls /docker-entrypoint-initdb.d/*.sql | sort); do echo \"running $f\"; psql -U postgres -d mecanice -f \"$f\" || true; done"
+	${DC} exec -T db bash -lc "for f in \$$(ls /docker-entrypoint-initdb.d/*.sql | sort); do echo \"running \$$f\"; psql -U postgres -d mecanice -f \"\$$f\" || true; done"
 
 # Alembic migration helpers
 # Create a new revision using --autogenerate (provide MSG)

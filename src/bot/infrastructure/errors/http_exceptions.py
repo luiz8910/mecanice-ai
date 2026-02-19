@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.bot.domain.errors import (
     DomainError,
@@ -12,6 +15,9 @@ from src.bot.domain.errors import (
     ConflictError,
     UnauthorizedError,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -34,3 +40,19 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _domain_generic(_req: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+    @app.exception_handler(SQLAlchemyError)
+    async def _sqlalchemy_error(_req: Request, exc: SQLAlchemyError) -> JSONResponse:
+        logger.exception("database error", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "internal server error"},
+        )
+
+    @app.exception_handler(Exception)
+    async def _unhandled_exception(_req: Request, exc: Exception) -> JSONResponse:
+        logger.exception("unhandled error", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "internal server error"},
+        )
