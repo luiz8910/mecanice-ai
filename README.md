@@ -2,9 +2,12 @@
 
 ## O que isso entrega
 - Endpoint: `POST /parts/recommendations`
-- IA retorna **JSON válido** seguindo o contrato
+ Execute também (em ordem):
 - RAG: busca trechos em Postgres+pgvector e injeta como `CONTEXT_SOURCES`
 - Scripts de ingestão:
+ psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/007_add_workshop_id_to_mechanics.sql
+ psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/008_add_soft_delete_to_mechanics.sql
+ psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/009_create_workshops_and_enforce_mechanic_fk.sql
   - `scripts/ingest_pdf.py`
   - `scripts/ingest_csv.py`
 
@@ -14,7 +17,47 @@
 Você precisa de um Postgres com pgvector habilitado.
 
 Exemplo (docker):
-```bash
+ ### Exemplo 1: criar workshop
+ ```bash
+ curl -X POST http://127.0.0.1:8000/workshops \
+   -H "Content-Type: application/json" \
+   -H "X-Admin-Token: change-me" \
+   -d '{
+     "name":"Oficina Centro",
+     "whatsapp_phone_e164":"+5511999990000",
+     "city":"São Paulo",
+     "state_uf":"SP",
+     "status":"active",
+     "notes":"Matriz"
+   }'
+ ```
+
+ ### Exemplo 2: listar workshops
+ ```bash
+ curl -X GET "http://127.0.0.1:8000/workshops?limit=50&offset=0" \
+   -H "X-Admin-Token: change-me"
+ ```
+
+ ### Exemplo 3: atualizar workshop
+ ```bash
+ curl -X PATCH http://127.0.0.1:8000/workshops/1 \
+   -H "Content-Type: application/json" \
+   -H "X-Admin-Token: change-me" \
+   -d '{
+     "name":"Oficina Centro - Unidade 1",
+     "status":"active"
+   }'
+ ```
+
+ ### Exemplo 4: remover workshop
+ > A API retorna conflito (`409`) ao tentar remover workshop com mecânicos ativos vinculados.
+
+ ```bash
+ curl -X DELETE http://127.0.0.1:8000/workshops/1 \
+   -H "X-Admin-Token: change-me"
+ ```
+
+ ### Exemplo 5: criar mecânico (workshop_id obrigatório)
 docker run --name mecanice-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=mecanice \
   -p 5432:5432 -d postgres:16
 ```
@@ -23,8 +66,9 @@ Depois, execute a migration:
 ```bash
 psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/001_create_rag_chunks.sql
 ```
-
 ---
+     "status":"active",
+     "workshop_id":1,
 
 ## 2) Configurar .env
 Crie um `.env` na raiz. O projeto aceita tanto as variáveis `LLM_*`/`EMBEDDINGS_*`
@@ -36,7 +80,6 @@ Exemplo mínimo (`LLM_*` + `EMBEDDINGS_*`):
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mecanice
 
-# LLM (chat/completions)
 LLM_PROVIDER=openai_compatible
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_API_KEY=SEU_TOKEN
@@ -117,9 +160,12 @@ curl -X POST http://127.0.0.1:8000/parts/recommendations \
 
 
 ## 6) Migration de mecânicos/oficinas
-Execute também:
+Execute também (em ordem):
 ```bash
 psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/002_create_mechanics.sql
+psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/007_add_workshop_id_to_mechanics.sql
+psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/008_add_soft_delete_to_mechanics.sql
+psql "postgresql://postgres:postgres@localhost:5432/mecanice" -f migrations/009_create_workshops_and_enforce_mechanic_fk.sql
 ```
 
 ### Admin token (MVP)
@@ -128,7 +174,47 @@ No `.env`:
 ADMIN_TOKEN=change-me
 ```
 
-### Teste rápido (criar mecânico)
+### Exemplo 1: criar workshop
+```bash
+curl -X POST http://127.0.0.1:8000/workshops \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: change-me" \
+  -d '{
+    "name":"Oficina Centro",
+    "whatsapp_phone_e164":"+5511999990000",
+    "city":"São Paulo",
+    "state_uf":"SP",
+    "status":"active",
+    "notes":"Matriz"
+  }'
+```
+
+### Exemplo 2: listar workshops
+```bash
+curl -X GET "http://127.0.0.1:8000/workshops?limit=50&offset=0" \
+  -H "X-Admin-Token: change-me"
+```
+
+### Exemplo 3: atualizar workshop
+```bash
+curl -X PATCH http://127.0.0.1:8000/workshops/1 \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: change-me" \
+  -d '{
+    "name":"Oficina Centro - Unidade 1",
+    "status":"active"
+  }'
+```
+
+### Exemplo 4: remover workshop
+> A API retorna conflito (`409`) ao tentar remover workshop com mecânicos ativos vinculados.
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/workshops/1 \
+  -H "X-Admin-Token: change-me"
+```
+
+### Exemplo 5: criar mecânico (workshop_id obrigatório)
 ```bash
 curl -X POST http://127.0.0.1:8000/mechanics \
   -H "Content-Type: application/json" \
@@ -138,6 +224,18 @@ curl -X POST http://127.0.0.1:8000/mechanics \
     "whatsapp_phone_e164":"+5511999999999",
     "city":"São Paulo",
     "state_uf":"SP",
+    "status":"active",
+    "workshop_id":1,
+    "categories":["freios"],
+    "notes":"tester"
+  }'
+```
+
+### Exemplo 6: listar mecânicos por workshop
+```bash
+curl -X GET "http://127.0.0.1:8000/mechanics?workshop_id=1" \
+  -H "X-Admin-Token: change-me"
+```
 
 ---
 
@@ -186,8 +284,3 @@ pytest -q
 Notes:
 - The project is being refactored toward a hexagonal-style structure (`domain/` for entities & ports, `app/` for use-cases + routers, and `infrastructure/` for adapters such as Postgres and WhatsApp). At present, most code still resides under `app/`, and some of these directories may not yet exist or may be incomplete. The router module `app.app_with_quotes` wires the current adapters for local development.
 - If you prefer the older `app.main:app` entrypoint, it still exists, but the recommended entry is `app.app_with_quotes:app` to include the new quotes router wiring.
-    "status":"active",
-    "categories":["freios"],
-    "notes":"tester"
-  }'
-```

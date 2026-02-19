@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Protocol, List, Optional
-from ...domain.model.workshop import Workshop
+from ....domain.model.workshop import Workshop
 
 
 class WorkshopRepoPort(Protocol):

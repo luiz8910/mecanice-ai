@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Protocol, List, Optional
-from ...domain.model.quote import Quote
+from ....domain.model.quote import Quote
 
 
 class QuoteRepoPort(Protocol):

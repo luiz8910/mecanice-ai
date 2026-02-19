@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Protocol, List, Optional
-from ...domain.model.solicitation import Solicitation
+from ....domain.model.solicitation import Solicitation
 
 
 class SolicitationRepoPort(Protocol):

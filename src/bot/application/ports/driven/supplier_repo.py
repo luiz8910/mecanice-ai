@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Protocol, List, Optional
-from ...domain.model.supplier import Supplier
+from ....domain.model.supplier import Supplier
 
 
 class SupplierRepoPort(Protocol):

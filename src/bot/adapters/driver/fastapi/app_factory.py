@@ -11,6 +11,12 @@ from fastapi import FastAPI
 from src.bot.adapters.driver.fastapi.routers.health import (
     router as health_router,
 )
+from src.bot.adapters.driver.fastapi.routers.mechanics import (
+    router as mechanics_router,
+)
+from src.bot.adapters.driver.fastapi.routers.workshops import (
+    router as workshops_router,
+)
 from src.bot.adapters.driver.fastapi.routers.quotes import (
     router as quotes_router,
 )
@@ -31,6 +37,8 @@ def create_app() -> FastAPI:
 
     # ── routers ───────────────────────────────────────────────────────
     application.include_router(health_router)
+    application.include_router(workshops_router)
+    application.include_router(mechanics_router)
     application.include_router(quotes_router)
 
     return application
