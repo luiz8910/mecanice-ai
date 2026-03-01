@@ -36,8 +36,31 @@ class Settings(BaseSettings):
     # ── Database ──────────────────────────────────────────────────────
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/mecanice"
 
+    # ── Celery / Queue ────────────────────────────────────────────────
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+
     # ── Auth (MVP) ────────────────────────────────────────────────────
     ADMIN_TOKEN: str = "change-me"
+    SELLER_JWT_SECRET: str = "change-me-seller-jwt-secret"
+
+    # ── Seller Portal Webhook ─────────────────────────────────────────
+    SELLER_PORTAL_WEBHOOK_URL: str = ""
+    SELLER_PORTAL_WEBHOOK_TIMEOUT_SECONDS: int = 8
+
+    # ── WhatsApp Cloud API ────────────────────────────────────────────
+    META_WHATSAPP_API_BASE_URL: str = "https://graph.facebook.com/v21.0"
+    META_WHATSAPP_PHONE_NUMBER_ID: str = ""
+    META_WHATSAPP_TOKEN: str = ""
+    META_WHATSAPP_TIMEOUT_SECONDS: int = 10
+    WHATSAPP_ACCESS_TOKEN: str = ""
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+    WHATSAPP_API_BASE_URL: str = "https://graph.facebook.com/v21.0"
+
+    # ── Vehicle plate lookup API ─────────────────────────────────────
+    PLATE_LOOKUP_BASE_URL: str = "https://brasilapi.com.br/api/placa/v1"
+    PLATE_LOOKUP_API_KEY: str = ""
+    PLATE_LOOKUP_TIMEOUT_SECONDS: int = 8
 
     # ── RAG ───────────────────────────────────────────────────────────
     RAG_TOP_K: int = 6

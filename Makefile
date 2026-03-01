@@ -1,4 +1,4 @@
-.PHONY: install db-up migrate migrate-docker test run ci \
+.PHONY: install up db-up migrate migrate-docker test run ci \
 	migration-make migration-make-manual migration-upgrade migration-downgrade migration-reset \
 	migration-make-docker migration-make-manual-docker migration-upgrade-docker migration-downgrade-docker migration-reset-docker
 
@@ -8,6 +8,9 @@ DC=docker compose
 
 install:
 	${PIP} install -r requirements.txt
+
+up:
+	${DC} up -d
 
 db-up:
 	${DC} up -d db

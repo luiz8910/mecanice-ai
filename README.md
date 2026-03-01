@@ -90,6 +90,11 @@ EMBEDDINGS_PROVIDER=openai_compatible
 EMBEDDINGS_BASE_URL=https://api.openai.com/v1
 EMBEDDINGS_API_KEY=SEU_TOKEN
 EMBEDDINGS_MODEL=text-embedding-3-small
+
+# Consulta de placa (fluxo WhatsApp -> vendedor -> conferência)
+PLATE_LOOKUP_BASE_URL=https://brasilapi.com.br/api/placa/v1
+PLATE_LOOKUP_API_KEY=demo-key-change-me
+PLATE_LOOKUP_TIMEOUT_SECONDS=8
 ```
 
 Se você usa nomes legados do OpenAI, eles também funcionarão como fallback:
@@ -284,3 +289,40 @@ pytest -q
 Notes:
 - The project is being refactored toward a hexagonal-style structure (`domain/` for entities & ports, `app/` for use-cases + routers, and `infrastructure/` for adapters such as Postgres and WhatsApp). At present, most code still resides under `app/`, and some of these directories may not yet exist or may be incomplete. The router module `app.app_with_quotes` wires the current adapters for local development.
 - If you prefer the older `app.main:app` entrypoint, it still exists, but the recommended entry is `app.app_with_quotes:app` to include the new quotes router wiring.
+
+---
+
+## Confirmar e enviar cotação (assíncrono com Celery + Redis)
+
+Variáveis de ambiente mínimas:
+
+```env
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/1
+WHATSAPP_ACCESS_TOKEN=change-me
+WHATSAPP_PHONE_NUMBER_ID=change-me
+```
+
+Subir infraestrutura local (DB + Redis + API + Worker):
+
+```bash
+docker compose up -d
+```
+
+Endpoint único para confirmar e enfileirar envio WhatsApp:
+
+```bash
+curl -X POST http://127.0.0.1:8001/quotes/123/confirm-and-send \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <SELLER_JWT>" \
+  -d '{
+    "selected_item_ids": ["10", "11"],
+    "note": "Entregamos hoje"
+  }'
+```
+
+Resposta esperada:
+
+```json
+{ "ok": true, "queued": true }
+```
