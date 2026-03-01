@@ -34,6 +34,18 @@ class SupplierNotFound(NotFoundError):
 	pass
 
 
+class VendorNotFound(NotFoundError):
+	pass
+
+
+class VendorAssignmentNotFound(NotFoundError):
+	pass
+
+
+class QuotationNotFound(NotFoundError):
+	pass
+
+
 class QuoteError(DomainError):
 	"""Generic quote-related error."""
 
