@@ -9,6 +9,12 @@ from src.bot.adapters.driven.db.session import get_session
 from src.bot.adapters.driven.db.repositories.mechanic_repo_sa import (
 	MechanicRepoSqlAlchemy,
 )
+from src.bot.adapters.driven.db.repositories.browser_auth_repo_sa import (
+    BrowserAuthRepoSqlAlchemy,
+)
+from src.bot.adapters.driven.db.repositories.browser_thread_repo_sa import (
+    BrowserThreadRepoSqlAlchemy,
+)
 from src.bot.adapters.driven.db.repositories.quote_workflow_repo_sa import (
 	QuoteWorkflowRepoSqlAlchemy,
 )
@@ -23,6 +29,18 @@ def get_mechanic_repo(
 	session: Session = Depends(get_session),
 ) -> MechanicRepoSqlAlchemy:
 	return MechanicRepoSqlAlchemy(session)
+
+
+def get_browser_auth_repo(
+    session: Session = Depends(get_session),
+) -> BrowserAuthRepoSqlAlchemy:
+    return BrowserAuthRepoSqlAlchemy(session)
+
+
+def get_browser_thread_repo(
+    session: Session = Depends(get_session),
+) -> BrowserThreadRepoSqlAlchemy:
+    return BrowserThreadRepoSqlAlchemy(session)
 
 
 def get_workshop_repo(

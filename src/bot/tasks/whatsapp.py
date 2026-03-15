@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -10,6 +12,14 @@ from src.bot.celery_app import celery_app
 from src.bot.infrastructure.logging import get_logger
 
 logger = get_logger(__name__)
+TRACE_FILE_PATH = Path("runtime/quote_worker_test_trace.txt")
+
+
+def _append_trace(message: str) -> None:
+    timestamp = datetime.now(timezone.utc).isoformat()
+    TRACE_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with TRACE_FILE_PATH.open("a", encoding="utf-8") as trace_file:
+        trace_file.write(f"{timestamp} | {message}\n")
 
 
 def _short_error(error: Exception) -> str:
@@ -19,9 +29,19 @@ def _short_error(error: Exception) -> str:
 
 @celery_app.task(bind=True, max_retries=5)
 def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
+    _append_trace(
+        f"received quote_id={quote_id} retry={int(self.request.retries)}"
+    )
+    logger.info(
+        "Worker received quote response for WhatsApp processing quote_id=%s retry=%s",
+        quote_id,
+        int(self.request.retries),
+    )
+
     try:
         parsed_quote_id = int(quote_id)
     except (TypeError, ValueError):
+        _append_trace(f"invalid_quote_id quote_id={quote_id}")
         return {"ok": False, "reason": "invalid_quote_id"}
 
     session = SessionLocal()
@@ -49,9 +69,11 @@ def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
         ).mappings().one_or_none()
 
         if quote is None:
+            _append_trace(f"quote_not_found quote_id={parsed_quote_id}")
             return {"ok": True, "queued": False, "reason": "quote_not_found"}
 
         if quote["whatsapp_sent_at"] is not None:
+            _append_trace(f"already_sent quote_id={parsed_quote_id}")
             return {"ok": True, "queued": False, "reason": "already_sent"}
 
         phone = quote.get("workshop_phone")
@@ -71,6 +93,7 @@ def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
                 },
             )
             session.commit()
+            _append_trace(f"missing_workshop_phone quote_id={parsed_quote_id}")
             return {"ok": False, "queued": False, "reason": "missing_workshop_phone"}
 
         total_raw = quote.get("total")
@@ -93,6 +116,7 @@ def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
             {"id": parsed_quote_id},
         )
         session.commit()
+        _append_trace(f"sent_success quote_id={parsed_quote_id} total={total:.2f}")
 
         return {"ok": True, "queued": True, "sent": True}
 
@@ -121,6 +145,9 @@ def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
 
         current_retry = int(self.request.retries)
         if current_retry >= int(self.max_retries):
+            _append_trace(
+                f"sent_failed_max_retries quote_id={parsed_quote_id} error={error_message}"
+            )
             logger.exception(
                 "Failed to send WhatsApp after max retries quote_id=%s",
                 parsed_quote_id,
@@ -132,6 +159,9 @@ def send_quote_whatsapp(self, quote_id: str) -> dict[str, object]:
                 "error": error_message,
             }
 
+        _append_trace(
+            f"retry_scheduled quote_id={parsed_quote_id} retry={current_retry + 1} error={error_message}"
+        )
         raise self.retry(exc=exc, countdown=2 ** current_retry)
     finally:
         session.close()

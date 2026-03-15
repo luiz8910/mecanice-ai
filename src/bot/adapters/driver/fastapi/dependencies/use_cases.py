@@ -15,8 +15,8 @@ from src.bot.adapters.driven.llm.llm_recommendation_adapter import (
 from src.bot.adapters.driven.webhooks.http_webhook_dispatcher import (
     HttpWebhookDispatcher,
 )
-from src.bot.adapters.driven.whatsapp.meta_cloud_api_client import (
-    MetaCloudApiClient,
+from src.bot.adapters.driven.whatsapp.observable_whatsapp_client import (
+    ObservableWhatsAppClient,
 )
 from src.bot.adapters.driven.vehicle.brasilapi_plate_lookup import (
     BrasilApiVehiclePlateLookup,
@@ -29,6 +29,10 @@ from src.bot.application.useCases.submit_vendor_offer_and_notify_mechanic import
 )
 from src.bot.application.services.idempotency_registry import (
     InMemoryIdempotencyRegistry,
+)
+from src.bot.application.services.parts_suggestion_provider import (
+    LlmPartsSuggestionProvider,
+    PartsSuggestionProvider,
 )
 from src.bot.application.services.vehicle_plate_resolver import VehiclePlateResolver
 from src.bot.infrastructure.config.settings import settings
@@ -48,8 +52,8 @@ def _webhook_dispatcher() -> HttpWebhookDispatcher:
 
 
 @lru_cache(maxsize=1)
-def _whatsapp_client() -> MetaCloudApiClient:
-    return MetaCloudApiClient(settings)
+def _whatsapp_client() -> ObservableWhatsAppClient:
+    return ObservableWhatsAppClient(settings)
 
 
 @lru_cache(maxsize=1)
@@ -76,6 +80,10 @@ def get_submit_vendor_offer_use_case() -> SubmitVendorOfferAndNotifyMechanicUseC
         messaging=_whatsapp_client(),
         idempotency_registry=_vendor_offer_idempotency_registry(),
     )
+
+
+def get_parts_suggestion_provider() -> PartsSuggestionProvider:
+    return LlmPartsSuggestionProvider(adapter=_llm_adapter())
 
 
 def get_webhook_dispatcher() -> HttpWebhookDispatcher:

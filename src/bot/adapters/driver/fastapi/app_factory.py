@@ -1,7 +1,7 @@
 """FastAPI application factory for the bot package.
 
 Run with:
-    uvicorn src.bot.adapters.driver.fastapi.app_factory:app --reload --port 8001
+    uvicorn src.bot.adapters.driver.fastapi.app_factory:app --reload --port 9000
 """
 
 from __future__ import annotations
@@ -12,35 +12,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.bot.adapters.driver.fastapi.routers.health import (
     router as health_router,
 )
+from src.bot.adapters.driver.fastapi.routers.auth import (
+    router as auth_router,
+)
 from src.bot.adapters.driver.fastapi.routers.mechanics import (
     router as mechanics_router,
 )
-from src.bot.adapters.driver.fastapi.routers.workshops import (
-    router as workshops_router,
+from src.bot.adapters.driver.fastapi.routers.mechanic_service_orders import (
+    router as mechanic_service_orders_router,
 )
-from src.bot.adapters.driver.fastapi.routers.quotes import (
-    router as quotes_router,
-)
-from src.bot.adapters.driver.fastapi.routers.seller_quotes import (
-    router as seller_quotes_router,
-)
-from src.bot.adapters.driver.fastapi.routers.seller_auth import (
-    router as seller_auth_router,
+from src.bot.adapters.driver.fastapi.routers.offers import (
+    router as offers_router,
 )
 from src.bot.adapters.driver.fastapi.routers.seller_inbox import (
     router as seller_inbox_router,
 )
-from src.bot.adapters.driver.fastapi.routers.whatsapp_webhook import (
-    router as whatsapp_router,
+from src.bot.adapters.driver.fastapi.routers.threads import (
+    router as threads_router,
 )
-from src.bot.adapters.driver.fastapi.routers.quotations import (
-    router as quotations_router,
-)
-from src.bot.adapters.driver.fastapi.routers.quotation_items import (
-    router as quotation_items_router,
-)
-from src.bot.adapters.driver.fastapi.routers.quote_confirmation import (
-    router as quote_confirmation_router,
+from src.bot.adapters.driver.fastapi.routers.workshops import (
+    router as workshops_router,
 )
 from src.bot.adapters.driver.fastapi.routers.vendors import (
     router as vendors_router,
@@ -52,9 +43,9 @@ from src.bot.infrastructure.errors.http_exceptions import (
 
 def create_app() -> FastAPI:
     application = FastAPI(
-        title="Mecanice Bot — Hexagonal",
+        title="Mecanice Browser Quotation Backend",
         version="0.1.0",
-        description="Cotação de peças automotivas via IA (arquitetura hexagonal).",
+        description="API do fluxo interno de cotação entre mecânicos e autopeças.",
     )
 
     # ── CORS ────────────────────────────────────────────────────────
@@ -71,17 +62,14 @@ def create_app() -> FastAPI:
 
     # ── routers ───────────────────────────────────────────────────────
     application.include_router(health_router)
+    application.include_router(auth_router)
     application.include_router(workshops_router)
     application.include_router(mechanics_router)
-    application.include_router(quotes_router)
-    application.include_router(whatsapp_router)
-    application.include_router(seller_quotes_router)
-    application.include_router(seller_auth_router)
+    application.include_router(mechanic_service_orders_router)
+    application.include_router(threads_router)
+    application.include_router(offers_router)
     application.include_router(seller_inbox_router)
     application.include_router(vendors_router)
-    application.include_router(quotations_router)
-    application.include_router(quotation_items_router)
-    application.include_router(quote_confirmation_router)
 
     return application
 

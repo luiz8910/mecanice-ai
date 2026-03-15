@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import httpx
 
+from src.bot.adapters.driven.whatsapp.test_message_sink import record_outbound_message
+from src.bot.application.dtos.messaging import OutgoingMessageDTO
 from src.bot.infrastructure.config.settings import Settings, settings
 from src.bot.infrastructure.logging import get_logger
 
@@ -15,6 +17,12 @@ class WhatsAppService:
     def send_text(self, to: str, text: str) -> None:
         if not to or not text:
             raise ValueError("to and text are required")
+
+        # Test mirror: keep local visibility of outbound messages regardless of
+        # external provider availability.
+        record_outbound_message(
+            OutgoingMessageDTO(recipient=to, text=text, metadata={"channel": "whatsapp_service"})
+        )
 
         access_token = self._settings.WHATSAPP_ACCESS_TOKEN or self._settings.META_WHATSAPP_TOKEN
         phone_number_id = self._settings.WHATSAPP_PHONE_NUMBER_ID or self._settings.META_WHATSAPP_PHONE_NUMBER_ID

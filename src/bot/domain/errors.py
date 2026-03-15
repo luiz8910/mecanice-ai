@@ -52,4 +52,3 @@ class QuoteError(DomainError):
 
 class SolicitationError(DomainError):
 	"""Generic solicitation-related error."""
-

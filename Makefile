@@ -89,6 +89,6 @@ test:
 	PYTHONPATH=. pytest -q
 
 run:
-	uvicorn main:app --reload --port 8001
+	uvicorn main:app --reload --port 9000
 
 ci: install db-up migrate-docker test

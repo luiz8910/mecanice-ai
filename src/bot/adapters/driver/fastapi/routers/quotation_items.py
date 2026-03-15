@@ -21,8 +21,13 @@ from src.bot.adapters.driver.fastapi.schemas.quotation_items import (
 from src.bot.adapters.driven.db.repositories.quotation_item_repo_sa import (
     QuotationItemRepoSqlAlchemy,
 )
+from src.bot.adapters.driven.whatsapp.test_message_sink import record_outbound_message
+from src.bot.application.dtos.messaging import OutgoingMessageDTO
+from src.bot.infrastructure.logging import get_logger
+from src.bot.tasks.whatsapp import send_quote_whatsapp
 
 router = APIRouter(prefix="/seller/inbox", tags=["seller-items"])
+logger = get_logger(__name__)
 
 
 # ── Items CRUD ───────────────────────────────────────────────────
@@ -124,7 +129,31 @@ async def submit_offer(
     seller: SellerIdentity = Depends(require_seller),
     repo: QuotationItemRepoSqlAlchemy = Depends(get_quotation_item_repo),
 ):
-    return repo.submit_offer(
+    result = repo.submit_offer(
         quotation_id=quotation_id,
         seller_id=seller.vendor_id,
     )
+
+    # Mirror a WhatsApp-like return to the test chat to validate end-to-end flow.
+    record_outbound_message(
+        OutgoingMessageDTO(
+            recipient=f"seller:{seller.vendor_id}",
+            text=(
+                f"Cotacao {quotation_id} enviada. "
+                f"Itens: {result['items_count']} | Total: R$ {result['total']:.2f}"
+            ),
+            metadata={
+                "quotation_id": str(quotation_id),
+                "seller_id": str(seller.vendor_id),
+                "source": "seller_inbox_offer",
+            },
+        )
+    )
+
+    try:
+        send_quote_whatsapp.delay(str(quotation_id))
+    except Exception as exc:
+        # Do not break seller flow in local/dev if broker is unavailable.
+        logger.warning("Failed to enqueue WhatsApp send for quotation_id=%s: %s", quotation_id, exc)
+
+    return result

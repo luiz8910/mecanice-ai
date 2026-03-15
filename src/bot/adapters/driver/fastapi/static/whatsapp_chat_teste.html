@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat de Teste</title>
+  <style>
+    :root {
+      --bg-top: #e7f0ec;
+      --bg-bottom: #c9ddd3;
+      --panel: #efeae2;
+      --header: #0d7f69;
+      --header-accent: #22a889;
+      --outgoing: #d9fdd2;
+      --incoming: #ffffff;
+      --text: #1f2a26;
+      --muted: #6a7672;
+      --line: #d7d8d7;
+      --shadow: 0 14px 36px rgba(17, 39, 33, 0.22);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: "Trebuchet MS", "Tahoma", "Verdana", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.75), transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.35), transparent 36%),
+        linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+    }
+
+    .chat-shell {
+      width: min(980px, 100%);
+      height: min(88vh, 760px);
+      background: #f8f6f2;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      border: 1px solid rgba(13, 127, 105, 0.14);
+      animation: fade-up 500ms ease;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #f9fbfa, #f0f4f2);
+      border-right: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .sidebar-top {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: bold;
+      background: linear-gradient(150deg, #2ca58d, #11745f);
+      letter-spacing: 0.5px;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .profile-status {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .search-box {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .search-box input {
+      width: 100%;
+      border: 1px solid #d5dbd8;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    .chat-list {
+      overflow: auto;
+      padding: 6px;
+    }
+
+    .chat-item {
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #eaf4f0;
+      border: 1px solid #d5e6e0;
+      animation: slide-in 450ms ease;
+    }
+
+    .chat-item-name {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .chat-item-preview {
+      margin: 2px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .chat-main {
+      background: var(--panel);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      isolation: isolate;
+    }
+
+    .chat-main::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle, rgba(19, 102, 84, 0.08) 1px, transparent 1px),
+        radial-gradient(circle, rgba(19, 102, 84, 0.04) 1px, transparent 1px);
+      background-size: 22px 22px, 28px 28px;
+      background-position: 0 0, 11px 11px;
+      z-index: -1;
+    }
+
+    .chat-header {
+      background: linear-gradient(130deg, var(--header), var(--header-accent));
+      color: #f7fffc;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .chat-header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .chat-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header small {
+      opacity: 0.82;
+      font-size: 0.8rem;
+    }
+
+    .chat-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    .messages {
+      padding: 16px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: min(78%, 520px);
+      padding: 9px 11px 7px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+      line-height: 1.35;
+      animation: pop-in 220ms ease;
+      position: relative;
+    }
+
+    .message p {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.94rem;
+    }
+
+    .message time {
+      display: block;
+      margin-top: 4px;
+      text-align: right;
+      color: #6a756f;
+      font-size: 0.73rem;
+    }
+
+    .incoming {
+      align-self: flex-start;
+      background: var(--incoming);
+      border-top-left-radius: 4px;
+    }
+
+    .outgoing {
+      align-self: flex-end;
+      background: var(--outgoing);
+      border-top-right-radius: 4px;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f4f2ee;
+    }
+
+    .composer-panel {
+      border: 1px solid #d7dbd8;
+      border-radius: 10px;
+      background: #fbfaf8;
+      padding: 10px;
+    }
+
+    .composer-title {
+      margin: 0 0 8px;
+      font-size: 0.8rem;
+      letter-spacing: 0.2px;
+      color: #3a4a45;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .composer textarea {
+      width: 100%;
+      border: 1px solid #d5dbd8;
+      border-radius: var(--radius-sm);
+      padding: 10px 11px;
+      min-height: 42px;
+      max-height: 130px;
+      resize: vertical;
+      font: inherit;
+      line-height: 1.34;
+      outline: none;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .composer textarea:focus {
+      border-color: #188f74;
+      box-shadow: 0 0 0 3px rgba(24, 143, 116, 0.16);
+    }
+
+    .send-button {
+      align-self: end;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(145deg, #149678, #0c7f65);
+      color: #fff;
+      padding: 11px 20px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+      transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .send-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.07);
+    }
+
+    .send-button:active {
+      transform: translateY(0);
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .composer-actions .send-button {
+      min-width: 220px;
+    }
+
+    .status-line {
+      margin: 0;
+      padding: 5px 16px;
+      font-size: 0.76rem;
+      color: var(--muted);
+      border-top: 1px solid #e5e4df;
+      background: #f6f4f0;
+    }
+
+    .flow-config {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .flow-config select,
+    .flow-config input[type="number"] {
+      width: 100%;
+      border: 1px solid #d5dbd8;
+      border-radius: 8px;
+      padding: 8px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .flow-config label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .flow-config-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-config-right input[type="number"] {
+      min-width: 160px;
+    }
+
+    .ia-state {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 10px;
+      flex-wrap: wrap;
+    }
+
+    .ia-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+      border: 1px solid #bfe8db;
+      color: #0d745f;
+      background: #e8f8f2;
+    }
+
+    .ia-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10a67e;
+      box-shadow: 0 0 0 3px rgba(16, 166, 126, 0.18);
+    }
+
+    .ia-meta {
+      margin: 0;
+      font-size: 0.78rem;
+      color: #4a5a55;
+    }
+
+    @keyframes pop-in {
+      from {
+        opacity: 0;
+        transform: scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slide-in {
+      from {
+        opacity: 0;
+        transform: translateX(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 920px) {
+      .chat-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 0;
+      }
+
+      .chat-shell {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+      }
+
+      .chat-header {
+        padding: 12px;
+      }
+
+      .chat-tools {
+        gap: 6px;
+      }
+
+      .btn {
+        padding: 7px 10px;
+        font-size: 0.78rem;
+      }
+
+      .messages {
+        padding: 12px;
+      }
+
+      .message {
+        max-width: 86%;
+      }
+
+      .composer {
+        padding: 10px;
+      }
+
+      .flow-config {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-config-right {
+        flex-wrap: wrap;
+      }
+
+      .composer-actions .send-button {
+        width: 100%;
+      }
+
+      .send-button {
+        padding: 10px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="chat-shell" aria-label="Simulador de conversa">
+    <aside class="sidebar" aria-label="Lista de conversas">
+      <div class="sidebar-top">
+        <div class="avatar" aria-hidden="true">EU</div>
+        <div>
+          <p class="profile-name">Mecanic-e Teste</p>
+          <p class="profile-status">Ambiente local</p>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <input type="text" value="Conversa de teste" aria-label="Pesquisar conversa" readonly />
+      </div>
+
+      <div class="chat-list">
+        <article class="chat-item">
+          <div class="avatar" aria-hidden="true">API</div>
+          <div>
+            <p class="chat-item-name">Conexao HTTP</p>
+            <p class="chat-item-preview">FastAPI: /test/whatsapp/api</p>
+          </div>
+        </article>
+      </div>
+    </aside>
+
+    <section class="chat-main" aria-label="Janela de mensagens">
+      <header class="chat-header">
+        <div class="chat-header-title">
+          <div class="avatar" aria-hidden="true">CT</div>
+          <div>
+            <h2>Cliente Teste</h2>
+            <small id="connection-status">conectando...</small>
+          </div>
+        </div>
+        <div class="chat-tools">
+          <button class="btn" id="simulate-reply" type="button">Simular resposta</button>
+          <button class="btn" id="clear-chat" type="button">Limpar chat</button>
+        </div>
+      </header>
+
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <p class="status-line" id="status-line">Aguardando sincronizacao...</p>
+
+      <form class="composer" id="composer-form" autocomplete="off">
+        <section class="composer-panel" aria-label="Configuracao da cotacao">
+          <p class="composer-title">1) Contexto da Cotacao</p>
+          <div class="ia-state">
+            <span class="ia-pill" id="ia-pill">
+              <span class="ia-dot" aria-hidden="true"></span>
+              IA ativa (OpenAI)
+            </span>
+            <p class="ia-meta" id="llm-candidates">Ultima cotacao: aguardando candidatos...</p>
+          </div>
+          <div class="flow-config">
+            <select id="seller-select" aria-label="Selecionar vendedor"></select>
+            <select id="workshop-select" aria-label="Selecionar oficina"></select>
+            <div class="flow-config-right">
+              <label>
+                <input type="checkbox" id="create-item" checked />
+                Criar item
+              </label>
+              <input type="number" id="item-price" min="0" step="0.01" placeholder="Preco opcional" />
+            </div>
+          </div>
+        </section>
+
+        <section class="composer-panel" aria-label="Mensagem do mecanico">
+          <p class="composer-title">2) Mensagem do Mecanico</p>
+          <textarea id="message-input" placeholder="Ex.: Alternador do Palio 2015 Fire Economy" aria-label="Mensagem"></textarea>
+        </section>
+
+        <div class="composer-actions">
+          <button class="send-button" type="submit">Enviar e criar cotacao</button>
+          <p class="hint">Enter envia. Shift + Enter quebra linha.</p>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "/test/whatsapp/api";
+
+    const messagesEl = document.getElementById("messages");
+    const formEl = document.getElementById("composer-form");
+    const inputEl = document.getElementById("message-input");
+    const simulateReplyEl = document.getElementById("simulate-reply");
+    const clearChatEl = document.getElementById("clear-chat");
+    const connectionStatusEl = document.getElementById("connection-status");
+    const statusLineEl = document.getElementById("status-line");
+    const sellerSelectEl = document.getElementById("seller-select");
+    const workshopSelectEl = document.getElementById("workshop-select");
+    const createItemEl = document.getElementById("create-item");
+    const itemPriceEl = document.getElementById("item-price");
+    const iaPillEl = document.getElementById("ia-pill");
+    const llmCandidatesEl = document.getElementById("llm-candidates");
+
+    const renderedIds = new Set();
+    let pollingTimer = null;
+
+    function formatTime(isoDate) {
+      const parsed = new Date(isoDate);
+      if (Number.isNaN(parsed.getTime())) {
+        return "--:--";
+      }
+      return parsed.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function setStatus(text, isError) {
+      statusLineEl.textContent = text;
+      statusLineEl.style.color = isError ? "#a73930" : "#6a7672";
+    }
+
+    function scrollToBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function setLlmCandidatesInfo(count) {
+      if (!Number.isFinite(count) || count <= 0) {
+        llmCandidatesEl.textContent = "Ultima cotacao: nenhum candidato retornado.";
+        return;
+      }
+      const suffix = count === 1 ? "candidato" : "candidatos";
+      llmCandidatesEl.textContent = "Ultima cotacao: " + count + " " + suffix + " via IA.";
+    }
+
+    function addMessageNode(message) {
+      if (!message || renderedIds.has(message.id)) {
+        return;
+      }
+
+      renderedIds.add(message.id);
+      const type = message.direction === "incoming" ? "incoming" : "outgoing";
+
+      const article = document.createElement("article");
+      article.className = "message " + type;
+
+      const messageText = document.createElement("p");
+      messageText.textContent = message.text || "";
+
+      const time = document.createElement("time");
+      time.textContent = formatTime(message.created_at);
+
+      article.appendChild(messageText);
+      article.appendChild(time);
+      messagesEl.appendChild(article);
+      scrollToBottom();
+    }
+
+    function renderMessages(messages) {
+      for (const message of messages || []) {
+        addMessageNode(message);
+      }
+    }
+
+    function fillSelect(selectEl, items, placeholder, mapLabel) {
+      selectEl.innerHTML = "";
+      if (!items || items.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = placeholder + " (nao encontrado)";
+        selectEl.appendChild(opt);
+        return;
+      }
+
+      for (const item of items) {
+        const opt = document.createElement("option");
+        opt.value = String(item.id);
+        opt.textContent = mapLabel(item);
+        selectEl.appendChild(opt);
+      }
+    }
+
+    async function requestJson(path, options) {
+      const response = await fetch(API_BASE + path, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      return response.json();
+    }
+
+    async function syncMessages(silent) {
+      try {
+        const data = await requestJson("/messages", { method: "GET" });
+        renderMessages(data.messages || []);
+        connectionStatusEl.textContent = "online";
+        if (!silent) {
+          setStatus("Sincronizado com endpoint.", false);
+        }
+      } catch (error) {
+        connectionStatusEl.textContent = "offline";
+        setStatus("Falha ao carregar mensagens: " + error.message, true);
+      }
+    }
+
+    async function loadContext() {
+      try {
+        const data = await requestJson("/context", { method: "GET" });
+        fillSelect(
+          sellerSelectEl,
+          data.vendors,
+          "Vendedor",
+          (v) => "Vendedor #" + v.id + " - " + v.name + " (autopeca " + v.autopart_id + ")"
+        );
+        fillSelect(
+          workshopSelectEl,
+          data.workshops,
+          "Oficina",
+          (w) => "Oficina #" + w.id + " - " + w.name
+        );
+
+        if (data.defaults && data.defaults.seller_id) {
+          sellerSelectEl.value = String(data.defaults.seller_id);
+        }
+        if (data.defaults && data.defaults.workshop_id) {
+          workshopSelectEl.value = String(data.defaults.workshop_id);
+        }
+      } catch (error) {
+        setStatus("Falha ao carregar contexto de banco: " + error.message, true);
+      }
+    }
+
+    async function sendMessage(text) {
+      const sellerId = Number(sellerSelectEl.value);
+      const workshopId = Number(workshopSelectEl.value);
+      const payload = {
+        text,
+        direction: "outgoing",
+        persist_quotation: true,
+        seller_id: Number.isFinite(sellerId) && sellerId > 0 ? sellerId : null,
+        workshop_id: Number.isFinite(workshopId) && workshopId > 0 ? workshopId : null,
+        create_item: !!createItemEl.checked,
+        item_price: itemPriceEl.value ? Number(itemPriceEl.value) : null,
+        use_llm: true,
+      };
+
+      const response = await requestJson("/messages", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      await syncMessages(true);
+
+      if (response.error) {
+        setLlmCandidatesInfo(0);
+        setStatus("Falha ao persistir cotacao: " + response.error, true);
+        return;
+      }
+
+      if (response.persisted && response.persisted.quotation) {
+        const q = response.persisted.quotation;
+        const candidatesCount = Number(response.persisted.llm_candidates_count || 0);
+        setLlmCandidatesInfo(candidatesCount);
+        setStatus("Cotacao salva: ID=" + q.id + " CODE=" + q.code, false);
+      } else {
+        setLlmCandidatesInfo(0);
+        setStatus("Mensagem enviada, sem persistencia de cotacao.", false);
+      }
+    }
+
+    async function simulateReply() {
+      connectionStatusEl.textContent = "digitando...";
+      try {
+        await requestJson("/simulate-reply", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        await syncMessages(true);
+        connectionStatusEl.textContent = "online";
+        setStatus("Resposta simulada recebida via endpoint.", false);
+      } catch (error) {
+        connectionStatusEl.textContent = "offline";
+        setStatus("Falha ao simular resposta: " + error.message, true);
+      }
+    }
+
+    async function clearChat() {
+      try {
+        const data = await requestJson("/messages", { method: "DELETE" });
+        renderedIds.clear();
+        messagesEl.innerHTML = "";
+        renderMessages(data.messages || []);
+        setStatus("Chat limpo no servidor de teste.", false);
+      } catch (error) {
+        setStatus("Falha ao limpar chat: " + error.message, true);
+      }
+    }
+
+    formEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text) {
+        return;
+      }
+
+      inputEl.value = "";
+      inputEl.focus();
+      await sendMessage(text);
+    });
+
+    inputEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        formEl.requestSubmit();
+      }
+    });
+
+    simulateReplyEl.addEventListener("click", async () => {
+      await simulateReply();
+    });
+
+    clearChatEl.addEventListener("click", async () => {
+      await clearChat();
+    });
+
+    async function start() {
+      iaPillEl.title = "Fluxo de cotacao com IA OpenAI habilitado";
+      await loadContext();
+      await syncMessages(false);
+      if (pollingTimer) {
+        clearInterval(pollingTimer);
+      }
+      pollingTimer = setInterval(() => {
+        syncMessages(true);
+      }, 2000);
+      inputEl.focus();
+    }
+
+    start();
+  </script>
+</body>
+</html>
