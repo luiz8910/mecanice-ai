@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS mechanics (
   status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'blocked')),
   address text NULL,
   email text NULL,
-  workshop_id bigserial NULL,
+  workshop_id bigint NULL,
   categories text[] NOT NULL DEFAULT '{}',
   notes text NULL,
   created_at timestamptz NOT NULL DEFAULT now(),

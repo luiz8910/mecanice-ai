@@ -14,7 +14,8 @@ Backend/API do Mecanice para o fluxo interno de cotação entre mecânicos e loj
 - FastAPI (`main.py`)
 - PostgreSQL
 - SQLAlchemy
-- Redis/Celery ainda existem no repositório, mas não fazem parte do fluxo principal desta API MVP
+- `docker compose up -d` sobe apenas `api` + `db` para o MVP atual
+- Redis/Celery continuam disponíveis no profile opcional `async`
 
 ## Principais recursos expostos
 - `POST /auth/login`
@@ -50,6 +51,16 @@ Backend/API do Mecanice para o fluxo interno de cotação entre mecânicos e loj
 ```bash
 pip install -r requirements.txt
 uvicorn main:app --reload --port 9000
+```
+
+## Rodando com Docker
+```bash
+docker compose up -d
+```
+
+Para ativar também o fluxo legado assíncrono com Redis/Celery:
+```bash
+docker compose --profile async up -d
 ```
 
 ## Documentação
