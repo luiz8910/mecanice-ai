@@ -2,9 +2,42 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+DEFAULT_CORS_ORIGINS = (
+    "https://front-end-mecanice.vercel.app",
+    "http://localhost:5173",
+)
+
+
+def parse_cors_origins(value: str | None) -> list[str]:
+    if value is None or not value.strip():
+        return list(DEFAULT_CORS_ORIGINS)
+
+    raw_value = value.strip()
+    parsed_items: list[str]
+
+    if raw_value.startswith("["):
+        loaded = json.loads(raw_value)
+        if not isinstance(loaded, list):
+            raise ValueError("CORS_ORIGINS em JSON deve ser uma lista de strings.")
+        parsed_items = [str(item) for item in loaded]
+    else:
+        parsed_items = raw_value.split(",")
+
+    origins = [item.strip().rstrip("/") for item in parsed_items if item.strip()]
+    if not origins:
+        raise ValueError("CORS_ORIGINS precisa conter ao menos uma origem valida.")
+
+    return origins
+
+
+def get_cors_origins() -> list[str]:
+    return parse_cors_origins(os.getenv("CORS_ORIGINS"))
 
 
 class Settings(BaseSettings):
