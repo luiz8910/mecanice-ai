@@ -36,6 +36,7 @@ from src.bot.adapters.driver.fastapi.routers.workshops import (
 from src.bot.adapters.driver.fastapi.routers.vendors import (
     router as vendors_router,
 )
+from src.bot.infrastructure.config.settings import get_cors_origins
 from src.bot.infrastructure.errors.http_exceptions import (
     register_exception_handlers,
 )
@@ -51,7 +52,7 @@ def create_app() -> FastAPI:
     # ── CORS ────────────────────────────────────────────────────────
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=get_cors_origins(),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
