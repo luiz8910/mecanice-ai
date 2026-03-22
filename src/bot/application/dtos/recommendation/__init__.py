@@ -7,6 +7,7 @@ from .known_fields import KnownFields
 from .next_question import NextQuestion
 from .part_request import PartRequest
 from .recommendation_request import RecommendationRequest
+from .recommendation_item_result import RecommendationItemResult
 from .recommendation_response import RecommendationResponse
 from .safety import Safety
 from .types import RecommendationType
@@ -22,6 +23,7 @@ __all__ = [
     "NextQuestion",
     "PartRequest",
     "RecommendationRequest",
+    "RecommendationItemResult",
     "RecommendationResponse",
     "Safety",
     "RecommendationType",

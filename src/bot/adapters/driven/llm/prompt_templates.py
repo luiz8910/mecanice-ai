@@ -7,6 +7,7 @@ but carry no domain logic.
 
 from __future__ import annotations
 
+import json
 from typing import List
 
 from src.bot.application.dtos.recommendation.recommendation_request import (
@@ -18,57 +19,32 @@ from src.bot.application.dtos.recommendation.part_request import PartRequest
 # ── System prompt (pt-BR) ────────────────────────────────────────────
 
 SYSTEM_PROMPT = """\
-Você é um assistente técnico especializado em identificar peças automotivas para mecânicos.
+Você é um assistente técnico especializado em organizar recomendações de peças automotivas.
 Você DEVE responder exclusivamente em JSON válido seguindo o schema fornecido.
-Seu objetivo é retornar o part_number (código único da peça/OEM/aftermarket) de cada candidato.
-Sempre que possível, retorne candidatos de MARCAS DIFERENTES para dar variedade ao mecânico.
-Incluir pelo menos a marca original (OEM) e 2-3 marcas aftermarket de qualidade conhecida.
-Cada candidato DEVE ter um part_number real e verificável — nunca invente códigos.
+Você NUNCA pode inventar candidatos, códigos, marcas ou compatibilidades fora da lista de candidatos pré-filtrados recebida.
 """
 
 # ── Developer / instruction block ────────────────────────────────────
 
 DEVELOPER_INSTRUCTIONS = """\
-Tarefa: analisar o pedido do mecânico e retornar peças com part_number único para que
-o vendedor da autopeça consiga localizar a peça exata no sistema dele.
+Tarefa: analisar o pedido do mecânico e organizar somente os candidatos pré-filtrados pelo backend.
 
 Regras:
-1. Extraia informações do veículo e da peça solicitada.
-2. Retorne de 3 a 5 candidatos de MARCAS DIFERENTES (OEM + aftermarket).
-3. Cada candidato DEVE ter:
-   - part_number: código único real da peça (ex: "SYL-1382", "TRW GDB1550", "96534653")
-   - brand: nome da marca/fabricante (ex: "Fras-le", "TRW", "Bosch", "Cobreq")
-   - average_price_brl: preço médio estimado em reais (float). Baseie-se em valores de mercado conhecidos.
-   - description: descrição curta da peça
-   - compatibility_notes: notas de compatibilidade com o veículo informado
-  - fitment_keys: lista de chaves de confirmação (ex: "dianteiro/traseiro", "com/sem ABS", "com/sem sensor", "motor", "ano")
-  - warning_flags: lista curta de alertas/riscos de confusão (ex: "varia por motor", "há versões com sensor")
-  - required_questions: 1 a 3 perguntas objetivas para desambiguar quando houver incerteza
-4. score (float 0..1) indica confiança de que aquele part_number é compatível.
-5. Se houver ambiguidade (ex: dianteiro vs traseiro), retorne candidatos com score menor
-  e preencha "required_questions".
-6. Retorne APENAS JSON válido.
+1. Use o veículo estruturado recebido como verdade principal.
+2. Você só pode reordenar, resumir e explicar os candidatos já pré-filtrados.
+3. Nunca adicione candidatos novos.
+4. Se faltarem dados, responda com "needs_more_info": true, preencha "required_missing_fields" e mantenha "candidates": [].
+5. Se houver candidatos plausíveis, retorne somente candidatos vindos da lista pré-filtrada.
+6. Preserve os ids/part_numbers recebidos.
+7. Retorne APENAS JSON válido.
 
 Schema de saída:
 {
   "id": "<echo do requester_id>",
-  "candidates": [
-    {
-      "id": "<identificador interno>",
-      "part_number": "<código único da peça>",
-      "brand": "<marca/fabricante>",
-      "average_price_brl": <float preço médio em R$>,
-      "score": <float 0..1>,
-      "metadata": {
-        "description": "...",
-        "compatibility_notes": "...",
-        "origin": "OEM" | "aftermarket",
-        "fitment_keys": ["..."],
-        "warning_flags": ["..."],
-        "required_questions": ["..."]
-      }
-    }
-  ],
+  "requested_item_type": "<tipo normalizado>",
+  "needs_more_info": false,
+  "required_missing_fields": [],
+  "candidates": [],
   "evidences": [
     {
       "id": "<source>",
@@ -79,14 +55,26 @@ Schema de saída:
   "raw": {}
 }
 
-Exemplo de resposta para "pastilha de freio dianteira Vectra 2.2 2000":
+Exemplo de resposta quando existem candidatos plausíveis:
 {
   "id": "mec_001",
+  "requested_item_type": "spark_plug",
+  "needs_more_info": false,
+  "required_missing_fields": [],
   "candidates": [
-    {"id": "1", "part_number": "96534653", "brand": "GM (OEM)", "average_price_brl": 189.90, "score": 0.95, "metadata": {"description": "Pastilha freio dianteira original", "compatibility_notes": "Vectra 2.0/2.2 1997-2005", "origin": "OEM", "fitment_keys": ["eixo (dianteiro/traseiro)", "com/sem ABS", "ano"], "warning_flags": ["pode variar por versão com/sem ABS"], "required_questions": []}},
-    {"id": "2", "part_number": "SYL-1382", "brand": "Fras-le", "average_price_brl": 119.90, "score": 0.90, "metadata": {"description": "Pastilha freio dianteira", "compatibility_notes": "Vectra todos 1997-2005", "origin": "aftermarket", "fitment_keys": ["eixo (dianteiro/traseiro)", "com/sem ABS", "ano"], "warning_flags": ["pode variar por versão com/sem ABS"], "required_questions": []}},
-    {"id": "3", "part_number": "GDB1550", "brand": "TRW", "average_price_brl": 139.90, "score": 0.90, "metadata": {"description": "Pastilha freio dianteira", "compatibility_notes": "Vectra 2.0/2.2 8v/16v", "origin": "aftermarket", "fitment_keys": ["eixo (dianteiro/traseiro)", "com/sem ABS", "ano"], "warning_flags": ["pode variar por versão com/sem ABS"], "required_questions": []}}
+    {"id": "cand-1", "part_number": "BKR6E-11", "brand": "NGK", "average_price_brl": 29.9, "score": 0.92, "compatibility_status": "compatible", "reason": "best_match", "metadata": {"description": "Vela de ignição", "compatibility_notes": "Palio 1.0 2012-2016", "ranking_reason": "Melhor aderência ao veículo informado."}}
   ],
+  "evidences": [],
+  "raw": {}
+}
+
+Exemplo quando faltam dados:
+{
+  "id": "mec_001",
+  "requested_item_type": "alternator",
+  "needs_more_info": true,
+  "required_missing_fields": ["engine", "version"],
+  "candidates": [],
   "evidences": [],
   "raw": {}
 }
@@ -111,6 +99,13 @@ def _format_vehicle(vehicle: dict | None) -> str:
     return ", ".join(parts) if parts else "Veículo não informado."
 
 
+def _format_prefiltered_candidates(context: dict | None) -> str:
+    if not context:
+        return "[]"
+    candidates = context.get("prefiltered_candidates") or []
+    return json.dumps(candidates, ensure_ascii=False)
+
+
 def build_messages(request: RecommendationRequest) -> list[dict[str, str]]:
     """Build the chat-completion messages list from a RecommendationRequest."""
 
@@ -118,7 +113,10 @@ def build_messages(request: RecommendationRequest) -> list[dict[str, str]]:
     parts_block = _format_parts(request.parts)
     context_block = ""
     if request.context:
-        context_block = f"\nContexto adicional: {request.context}"
+        context_block = (
+            f"\nContexto adicional: {json.dumps(request.context, ensure_ascii=False)}"
+            f"\nCandidatos pré-filtrados: {_format_prefiltered_candidates(request.context)}"
+        )
 
     user_content = (
         f"Solicitante: {request.requester_id or 'anônimo'}\n"

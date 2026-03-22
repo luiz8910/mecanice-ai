@@ -87,7 +87,7 @@ class OpenAiRecommendationAdapter:
         }
 
         logger.info(
-            "Calling LLM  model=%s  url=%s", s.LLM_MODEL, url,
+            "[RECOMMENDER_DEBUG] Calling LLM model=%s url=%s", s.LLM_MODEL, url,
         )
 
         async with httpx.AsyncClient(timeout=s.LLM_TIMEOUT_SECONDS) as client:
@@ -108,7 +108,7 @@ class OpenAiRecommendationAdapter:
         except (KeyError, IndexError) as exc:
             raise LlmError(f"Resposta inesperada do provedor: {exc}") from exc
 
-        logger.debug("LLM raw content: %s", content[:300])
+        logger.debug("[RECOMMENDER_DEBUG] LLM raw content: %s", content[:300])
         return content
 
     def _parse_response(

@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class Candidate(BaseModel):
@@ -8,4 +9,6 @@ class Candidate(BaseModel):
     brand: Optional[str] = None
     average_price_brl: Optional[float] = None
     score: Optional[float] = None
-    metadata: Optional[dict] = None
+    metadata: dict = Field(default_factory=dict)
+    compatibility_status: Optional[str] = None
+    reason: Optional[str] = None

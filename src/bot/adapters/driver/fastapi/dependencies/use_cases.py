@@ -34,6 +34,9 @@ from src.bot.application.services.parts_suggestion_provider import (
     LlmPartsSuggestionProvider,
     PartsSuggestionProvider,
 )
+from src.bot.application.services.recommendation_service import (
+    FilteredRecommendationService,
+)
 from src.bot.application.services.vehicle_plate_resolver import VehiclePlateResolver
 from src.bot.infrastructure.config.settings import settings
 
@@ -41,6 +44,11 @@ from src.bot.infrastructure.config.settings import settings
 @lru_cache(maxsize=1)
 def _llm_adapter() -> OpenAiRecommendationAdapter:
     return OpenAiRecommendationAdapter(settings)
+
+
+@lru_cache(maxsize=1)
+def _recommendation_service() -> FilteredRecommendationService:
+    return FilteredRecommendationService(llm=_llm_adapter())
 
 
 @lru_cache(maxsize=1)
@@ -72,7 +80,7 @@ def _vendor_offer_idempotency_registry() -> InMemoryIdempotencyRegistry:
 
 
 def get_fanout_use_case() -> FanoutQuoteRequestsUseCase:
-    return FanoutQuoteRequestsUseCase(llm=_llm_adapter())
+    return FanoutQuoteRequestsUseCase(llm=_recommendation_service())
 
 
 def get_submit_vendor_offer_use_case() -> SubmitVendorOfferAndNotifyMechanicUseCase:
@@ -83,7 +91,7 @@ def get_submit_vendor_offer_use_case() -> SubmitVendorOfferAndNotifyMechanicUseC
 
 
 def get_parts_suggestion_provider() -> PartsSuggestionProvider:
-    return LlmPartsSuggestionProvider(adapter=_llm_adapter())
+    return LlmPartsSuggestionProvider(recommender=_recommendation_service())
 
 
 def get_webhook_dispatcher() -> HttpWebhookDispatcher:
