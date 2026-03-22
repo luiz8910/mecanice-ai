@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.bot.domain.errors import NotFoundError, UnauthorizedError, ValidationError
+from src.bot.application.services.recommendation_service import expand_requested_items
 
 
 THREAD_STATUSES = {"open", "awaiting_seller_response", "offer_received", "closed"}
@@ -1228,7 +1229,7 @@ class BrowserThreadRepoSqlAlchemy:
             ]
 
         normalized_items: list[dict[str, Any]] = []
-        for item in requested_items:
+        for item in expand_requested_items(requested_items, payload.get("vehicle") or {}):
             description = str(item.get("description") or "").strip()
             if not description:
                 raise ValidationError("requested item description is required")

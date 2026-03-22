@@ -29,9 +29,12 @@ def _to_application_dto(schema: QuoteRequestSchema) -> RecommendationRequest:
     if schema.parts:
         parts = [
             PartRequest(
+                item_id=p.item_id,
                 part_number=p.part_number,
                 description=p.description,
                 quantity=p.quantity,
+                notes=p.notes,
+                metadata=p.metadata,
             )
             for p in schema.parts
         ]
