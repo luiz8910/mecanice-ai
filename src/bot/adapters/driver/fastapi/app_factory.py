@@ -21,6 +21,9 @@ from src.bot.adapters.driver.fastapi.routers.mechanics import (
 from src.bot.adapters.driver.fastapi.routers.mechanic_service_orders import (
     router as mechanic_service_orders_router,
 )
+from src.bot.adapters.driver.fastapi.routers.llm_logs import (
+    router as llm_logs_router,
+)
 from src.bot.adapters.driver.fastapi.routers.offers import (
     router as offers_router,
 )
@@ -67,6 +70,7 @@ def create_app() -> FastAPI:
     application.include_router(workshops_router)
     application.include_router(mechanics_router)
     application.include_router(mechanic_service_orders_router)
+    application.include_router(llm_logs_router)
     application.include_router(threads_router)
     application.include_router(offers_router)
     application.include_router(seller_inbox_router)

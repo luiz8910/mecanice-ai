@@ -15,6 +15,9 @@ from src.bot.adapters.driven.db.repositories.browser_auth_repo_sa import (
 from src.bot.adapters.driven.db.repositories.browser_thread_repo_sa import (
     BrowserThreadRepoSqlAlchemy,
 )
+from src.bot.adapters.driven.db.repositories.llm_call_log_repo_sa import (
+    LlmCallLogRepoSqlAlchemy,
+)
 from src.bot.adapters.driven.db.repositories.quote_workflow_repo_sa import (
 	QuoteWorkflowRepoSqlAlchemy,
 )
@@ -41,6 +44,12 @@ def get_browser_thread_repo(
     session: Session = Depends(get_session),
 ) -> BrowserThreadRepoSqlAlchemy:
     return BrowserThreadRepoSqlAlchemy(session)
+
+
+def get_llm_call_log_repo(
+    session: Session = Depends(get_session),
+) -> LlmCallLogRepoSqlAlchemy:
+    return LlmCallLogRepoSqlAlchemy(session)
 
 
 def get_workshop_repo(
