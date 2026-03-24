@@ -107,10 +107,7 @@ class LlmCallLogRepoSqlAlchemy:
                     http_status = :http_status,
                     duration_ms = :duration_ms,
                     response_candidate_count = :response_candidate_count,
-                    parsed_response_json = CASE
-                        WHEN :parsed_response_json IS NULL THEN NULL
-                        ELSE CAST(:parsed_response_json AS jsonb)
-                    END,
+                    parsed_response_json = CAST(:parsed_response_json AS jsonb),
                     raw_response_text = :raw_response_text,
                     updated_at = now()
                 WHERE id = CAST(:log_id AS uuid)
