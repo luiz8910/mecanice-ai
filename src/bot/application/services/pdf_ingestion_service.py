@@ -2,12 +2,13 @@
 
 Pipeline per catalog:
   1. Mark catalog as 'processing'
-  2. Delete any previously stored chunks for this catalog
-  3. Open PDF with PyMuPDF, extract text page by page
-  4. Split each page into overlapping character-level chunks
-  5. Embed chunks in batches via EmbeddingsAdapter
-  6. Persist chunks to rag_chunks
-  7. Mark catalog as 'ready' (or 'error' on failure)
+  2. Auto-detect brand from filename/content
+  3. Delete any previously stored chunks for this catalog
+  4. Open PDF with PyMuPDF, extract text page by page
+  5. Split each page into overlapping character-level chunks
+  6. Embed chunks in batches via EmbeddingsAdapter
+  7. Persist chunks to rag_chunks
+  8. Mark catalog as 'ready' (or 'error' on failure)
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from typing import TYPE_CHECKING
 
 import fitz  # PyMuPDF
 
+from src.bot.application.services.brand_detector import extract_brand
 from src.bot.infrastructure.logging import get_logger
 
 if TYPE_CHECKING:
@@ -75,6 +77,17 @@ class PdfIngestionService:
 
             catalog = self._catalog_repo.get_by_id(catalog_id)
             chunks_data: list[dict] = []
+
+            # Auto-detect brand from filename
+            detected_brand = extract_brand(catalog["original_filename"])
+            if detected_brand and not catalog.get("brand"):
+                logger.info("Catalog %d: auto-detected brand = %s", catalog_id, detected_brand)
+                # Update catalog with detected brand
+                self._catalog_repo.update_brand(catalog_id, detected_brand)
+                catalog["brand"] = detected_brand
+            else:
+                brand_source = "provided" if catalog.get("brand") else "not found"
+                logger.info("Catalog %d: brand = %s (%s)", catalog_id, catalog.get("brand"), brand_source)
 
             with fitz.open(pdf_path) as doc:
                 page_count = len(doc)

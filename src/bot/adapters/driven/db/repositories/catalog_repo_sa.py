@@ -99,6 +99,18 @@ class CatalogRepoSqlAlchemy:
 
     # ── UPDATE ────────────────────────────────────────────────────────
 
+    def update_brand(self, catalog_id: int, brand: str) -> None:
+        """Update catalog brand during ingestion."""
+        self._session.execute(
+            text("""
+                UPDATE catalog_documents
+                SET brand = :brand, updated_at = now()
+                WHERE id = :id
+            """),
+            {"id": catalog_id, "brand": brand},
+        )
+        self._session.commit()
+
     def update_status(
         self,
         catalog_id: int,
