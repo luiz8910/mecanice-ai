@@ -35,6 +35,7 @@ class RagQueryRequest(BaseModel):
 
 class RagQuerySource(BaseModel):
     catalog_id: int | None
+    brand: str | None
     filename: str | None
     page: int | None
     chunk_text: str
@@ -44,3 +45,4 @@ class RagQuerySource(BaseModel):
 class RagQueryResponse(BaseModel):
     answer: str
     sources: list[RagQuerySource]
+    total_sources: int = Field(description="Total sources considered")

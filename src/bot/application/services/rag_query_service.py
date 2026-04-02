@@ -26,9 +26,22 @@ logger = get_logger(__name__)
 
 _SYSTEM_PROMPT = (
     "Você é um especialista em peças automotivas. "
-    "Utilize as seções do catálogo fornecidas como contexto para responder à pergunta. "
-    "Seja preciso, cite números de peças e páginas quando disponíveis. "
-    "Se a informação não estiver no contexto, informe que não foi encontrada nos catálogos."
+    "Seu trabalho é extrair informações precisas dos catálogos fornecidos.\n\n"
+    "INSTRUÇÕES:\n"
+    "1. Analise cuidadosamente os dados fornecidos\n"
+    "2. Identifique o MODELO do veículo (ex: Palio, Gol, Uno)\n"
+    "3. Extraia os NÚMEROS DE PEÇA (part numbers)\n"
+    "4. Liste as ESPECIFICAÇÕES (ano, motor, tipo)\n"
+    "5. Cite a PÁGINA DE ORIGEM quando disponível\n"
+    "6. Se a pergunta for sobre um modelo específico (ex: Palio 1.0), "
+    "   VERIFIQUE se os dados são realmente para esse modelo\n\n"
+    "FORMATO DE RESPOSTA:\n"
+    "Modelo: [nome do veículo]\n"
+    "Aplicações: [lista de configurações (ano, motor, etc)]\n"
+    "Números de peça: [lista de part numbers com especificações]\n"
+    "Página: [número da página no catálogo]\n\n"
+    "Se a informação não corresponder ao modelo solicitado ou não estiver nos catálogos, "
+    "INFORME CLARAMENTE que não foi encontrada."
 )
 
 
@@ -96,21 +109,26 @@ class RagQueryService:
         ]
         answer = await self._call_llm(messages)
 
-        # 5. Build source list
+        # 5. Build source list with brand information
         sources: list[dict[str, Any]] = []
         for chunk in chunks:
             meta = chunk.get("metadata") or {}
             sources.append(
                 {
                     "catalog_id": meta.get("catalog_id"),
+                    "brand": chunk.get("brand"),
                     "filename": meta.get("original_filename"),
                     "page": meta.get("page"),
-                    "chunk_text": chunk["chunk_text"][:300],
+                    "chunk_text": chunk["chunk_text"][:500],  # Show more context
                     "similarity": float(chunk.get("similarity") or 0),
                 }
             )
 
-        return {"answer": answer, "sources": sources}
+        return {
+            "answer": answer,
+            "sources": sources,
+            "total_sources": len(sources),
+        }
 
     # ── private ───────────────────────────────────────────────────────
 

@@ -193,6 +193,7 @@ async def query_catalogs(
     return RagQueryResponse(
         answer=result["answer"],
         sources=[RagQuerySource(**s) for s in result["sources"]],
+        total_sources=result.get("total_sources", len(result["sources"])),
     )
 
 
