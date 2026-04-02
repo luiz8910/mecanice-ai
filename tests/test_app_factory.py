@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.bot.adapters.driver.fastapi.app_factory import create_app
 from src.bot.infrastructure.config.settings import (
     DEFAULT_CORS_ORIGINS,
+    LOCAL_CORS_ORIGIN_REGEX,
     parse_cors_origins,
 )
 
@@ -15,11 +16,13 @@ def test_parse_cors_origins_uses_defaults_when_env_is_missing():
 
 def test_parse_cors_origins_accepts_csv_values():
     origins = parse_cors_origins(
-        "https://front-end-mecanice.vercel.app,http://localhost:5173/"
+        "https://front-end-mecanice.vercel.app,https://mecanice-ai.vercel.app,http://localhost:3000/,http://localhost:5173/"
     )
 
     assert origins == [
         "https://front-end-mecanice.vercel.app",
+        "https://mecanice-ai.vercel.app",
+        "http://localhost:3000",
         "http://localhost:5173",
     ]
 
@@ -27,7 +30,7 @@ def test_parse_cors_origins_accepts_csv_values():
 def test_create_app_uses_cors_origins_from_env(monkeypatch):
     monkeypatch.setenv(
         "CORS_ORIGINS",
-        "https://front-end-mecanice.vercel.app,http://localhost:5173",
+        "https://front-end-mecanice.vercel.app,https://mecanice-ai.vercel.app,http://localhost:3000,http://localhost:5173",
     )
 
     app = create_app()
@@ -37,8 +40,11 @@ def test_create_app_uses_cors_origins_from_env(monkeypatch):
         if middleware.cls is CORSMiddleware
     )
 
-    assert cors_middleware.options["allow_origins"] == [
+    assert cors_middleware.kwargs["allow_origins"] == [
         "https://front-end-mecanice.vercel.app",
+        "https://mecanice-ai.vercel.app",
+        "http://localhost:3000",
         "http://localhost:5173",
     ]
-    assert cors_middleware.options["allow_credentials"] is True
+    assert cors_middleware.kwargs["allow_origin_regex"] == LOCAL_CORS_ORIGIN_REGEX
+    assert cors_middleware.kwargs["allow_credentials"] is True

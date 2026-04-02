@@ -39,7 +39,19 @@ from src.bot.adapters.driver.fastapi.routers.workshops import (
 from src.bot.adapters.driver.fastapi.routers.vendors import (
     router as vendors_router,
 )
-from src.bot.infrastructure.config.settings import get_cors_origins
+from src.bot.adapters.driver.fastapi.routers.manufacturers import (
+    router as manufacturers_router,
+)
+from src.bot.adapters.driver.fastapi.routers.vehicles import (
+    router as vehicles_router,
+)
+from src.bot.adapters.driver.fastapi.routers.admin_catalogs import (
+    router as admin_catalogs_router,
+)
+from src.bot.infrastructure.config.settings import (
+    LOCAL_CORS_ORIGIN_REGEX,
+    get_cors_origins,
+)
 from src.bot.infrastructure.errors.http_exceptions import (
     register_exception_handlers,
 )
@@ -56,6 +68,7 @@ def create_app() -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=get_cors_origins(),
+        allow_origin_regex=LOCAL_CORS_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -75,6 +88,9 @@ def create_app() -> FastAPI:
     application.include_router(offers_router)
     application.include_router(seller_inbox_router)
     application.include_router(vendors_router)
+    application.include_router(manufacturers_router)
+    application.include_router(vehicles_router)
+    application.include_router(admin_catalogs_router)
 
     return application
 
