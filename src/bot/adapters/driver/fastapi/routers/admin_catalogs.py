@@ -129,6 +129,12 @@ async def upload_catalog(
         }
     )
 
+    # Deactivate older catalogs with the same filename
+    catalog_repo.deactivate_older_duplicates(
+        filename=file.filename or stored_filename,
+        keep_id=catalog["id"],
+    )
+
     # Schedule background ingestion in a separate thread
     thread = threading.Thread(
         target=_ingest_background,

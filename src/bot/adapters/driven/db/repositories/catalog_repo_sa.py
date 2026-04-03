@@ -8,6 +8,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.bot.domain.errors import CatalogNotFound
+from src.bot.infrastructure.logging import get_logger
+
+logger = get_logger(__name__)
 
 _COLS = """
     id, manufacturer_id, original_filename, stored_filename,
@@ -98,6 +101,30 @@ class CatalogRepoSqlAlchemy:
         return [dict(r) for r in rows]
 
     # ── UPDATE ────────────────────────────────────────────────────────
+
+    def deactivate_older_duplicates(self, filename: str, keep_id: int) -> int:
+        """Deactivate older catalogs with the same filename (except keep_id).
+
+        Called after a new catalog upload so only the latest version is active.
+        Returns the number of deactivated catalogs.
+        """
+        result = self._session.execute(
+            text("""
+                UPDATE catalog_documents
+                SET is_active = false, updated_at = now()
+                WHERE original_filename = :filename
+                  AND id != :keep_id
+                  AND is_active = true
+            """),
+            {"filename": filename, "keep_id": keep_id},
+        )
+        if result.rowcount > 0:
+            self._session.commit()
+            logger.info(
+                "Deactivated %d older catalog(s) with filename '%s' (kept id=%d)",
+                result.rowcount, filename, keep_id,
+            )
+        return result.rowcount
 
     def update_brand(self, catalog_id: int, brand: str) -> None:
         """Update catalog brand during ingestion."""

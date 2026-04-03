@@ -25,23 +25,31 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 _SYSTEM_PROMPT = (
-    "Você é um especialista em peças automotivas. "
-    "Seu trabalho é extrair informações precisas dos catálogos fornecidos.\n\n"
+    "Você é um especialista em peças automotivas que consulta catálogos técnicos.\n\n"
     "INSTRUÇÕES:\n"
-    "1. Analise cuidadosamente os dados fornecidos\n"
-    "2. Identifique o MODELO do veículo (ex: Palio, Gol, Uno)\n"
-    "3. Extraia os NÚMEROS DE PEÇA (part numbers)\n"
-    "4. Liste as ESPECIFICAÇÕES (ano, motor, tipo)\n"
-    "5. Cite a PÁGINA DE ORIGEM quando disponível\n"
-    "6. Se a pergunta for sobre um modelo específico (ex: Palio 1.0), "
-    "   VERIFIQUE se os dados são realmente para esse modelo\n\n"
-    "FORMATO DE RESPOSTA:\n"
-    "Modelo: [nome do veículo]\n"
-    "Aplicações: [lista de configurações (ano, motor, etc)]\n"
-    "Números de peça: [lista de part numbers com especificações]\n"
-    "Página: [número da página no catálogo]\n\n"
-    "Se a informação não corresponder ao modelo solicitado ou não estiver nos catálogos, "
-    "INFORME CLARAMENTE que não foi encontrada."
+    "1. Os dados fornecidos são extraídos de catálogos PDF e podem estar em formato tabular "
+    "   compactado (colunas misturadas em uma linha). Interprete com cuidado.\n"
+    "2. Identifique SOMENTE informações que correspondam ao veículo/peça solicitados.\n"
+    "3. Dados de catálogos Bosch seguem o padrão: Modelo | Motorização | Combustível | "
+    "   Código da vela | Gap | Nº Referência | Código Simplificado | Cabo | Bobina\n"
+    "4. Dados de catálogos NGK seguem o padrão: Modelo | Motorização | Combustível | "
+    "   Código Convencional | Código Iridium | Gap | Anos | Cabo de ignição\n\n"
+    "FORMATO DA RESPOSTA (use markdown):\n"
+    "**Veículo:** Nome e variante (ex: Fiat Palio 1.0 8V Fire)\n"
+    "**Ano(s):** Período de aplicação\n"
+    "**Motor:** Código do motor e detalhes\n"
+    "**Combustível:** Gasolina / Flex / Álcool\n\n"
+    "**Velas de ignição:**\n"
+    "| Marca | Código | Tipo | Gap (mm) |\n"
+    "|-------|--------|------|----------|\n"
+    "| Bosch | FR 6 D+ | Convencional | 0.8 |\n\n"
+    "**Cabos de ignição:** código(s) se disponível\n"
+    "**Bobina de ignição:** código(s) se disponível\n\n"
+    "REGRAS:\n"
+    "- Se encontrou dados para o veículo, apresente TODOS os códigos de peça disponíveis.\n"
+    "- Se NÃO encontrou dados exatos, diga claramente e sugira o modelo mais próximo encontrado.\n"
+    "- NÃO invente dados. Só apresente o que está nos trechos fornecidos.\n"
+    "- Responda SEMPRE em português brasileiro.\n"
 )
 
 
@@ -68,14 +76,15 @@ class RagQueryService:
         # 1. Embed the query
         query_embedding = await self._embeddings.embed_text(query)
 
-        # 2. Vector search
-        chunks = self._chunk_repo.search_similar(
+        # 2. Vector search — over-fetch then diversify across catalogs
+        raw_chunks = self._chunk_repo.search_similar(
             query_embedding,
-            top_k=top_k,
+            top_k=top_k * 3,
             manufacturer_id=manufacturer_id,
             catalog_id=catalog_id,
             brand=brand,
         )
+        chunks = self._diversify_sources(raw_chunks, top_k)
 
         if not chunks:
             return {
@@ -86,14 +95,18 @@ class RagQueryService:
                 "sources": [],
             }
 
-        # 3. Build context string
+        # 3. Build context string with catalog metadata
         context_parts: list[str] = []
         for i, chunk in enumerate(chunks, start=1):
             meta = chunk.get("metadata") or {}
             filename = meta.get("original_filename", "catálogo")
             page = meta.get("page", "?")
+            brand = chunk.get("brand") or "Desconhecida"
+            similarity = chunk.get("similarity", 0)
             context_parts.append(
-                f"[Trecho {i} — {filename}, pág. {page}]\n{chunk['chunk_text']}"
+                f"[Trecho {i} — Marca: {brand} | Catálogo: {filename} | "
+                f"Página: {page} | Relevância: {similarity:.0%}]\n"
+                f"{chunk['chunk_text']}"
             )
         context_text = "\n\n---\n\n".join(context_parts)
 
@@ -131,6 +144,43 @@ class RagQueryService:
         }
 
     # ── private ───────────────────────────────────────────────────────
+
+    @staticmethod
+    def _diversify_sources(
+        chunks: list[dict[str, Any]], top_k: int
+    ) -> list[dict[str, Any]]:
+        """Pick top_k chunks ensuring multiple catalogs are represented.
+
+        Uses round-robin across catalog_ids so results aren't dominated
+        by a single large catalog.
+        """
+        if len(chunks) <= top_k:
+            return chunks
+
+        # Group by catalog_id preserving order (most relevant first)
+        from collections import OrderedDict
+        by_catalog: OrderedDict[int | None, list[dict[str, Any]]] = OrderedDict()
+        for c in chunks:
+            cat_id = (c.get("metadata") or {}).get("catalog_id")
+            by_catalog.setdefault(cat_id, []).append(c)
+
+        # Round-robin pick from each catalog
+        result: list[dict[str, Any]] = []
+        iterators = {k: iter(v) for k, v in by_catalog.items()}
+        while len(result) < top_k and iterators:
+            exhausted = []
+            for cat_id, it in iterators.items():
+                if len(result) >= top_k:
+                    break
+                chunk = next(it, None)
+                if chunk is None:
+                    exhausted.append(cat_id)
+                else:
+                    result.append(chunk)
+            for cat_id in exhausted:
+                del iterators[cat_id]
+
+        return result
 
     async def _call_llm(self, messages: list[dict[str, str]]) -> str:
         s = self._settings

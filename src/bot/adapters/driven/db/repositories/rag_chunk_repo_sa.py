@@ -73,11 +73,16 @@ class RagChunkRepoSqlAlchemy:
         - brand: restrict to a specific brand
         """
         # Convert embedding to SQL array format for pgvector
-        # Handle both list of floats and pre-converted string
-        if isinstance(embedding, str):
-            embedding_str = embedding
-        else:
+        # Embeddings should always be list[float] from the API
+        if isinstance(embedding, list):
             embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        else:
+            # Fallback: if somehow it's already a string, use as-is
+            embedding_str = str(embedding)
+
+        logger.debug("Embedding: type=%s, dims=%s",
+                     type(embedding).__name__,
+                     len(embedding) if isinstance(embedding, list) else "N/A")
 
         where: list[str] = ["rc.source_type = 'catalog'"]
         params: dict[str, Any] = {"embedding_array": embedding_str, "top_k": top_k}
@@ -103,33 +108,33 @@ class RagChunkRepoSqlAlchemy:
 
         where_sql = " AND ".join(where)
 
+        # Use a CTE to materialise the search vector once, so the HNSW
+        # index on rag_chunks.embedding is used for the ORDER BY + LIMIT.
         sql = f"""
+                WITH search_vector AS (
+                    SELECT CAST(:embedding_array AS vector) AS vec
+                )
                 SELECT
                     rc.id,
                     rc.source_id,
                     rc.chunk_text,
                     rc.metadata,
-                    1 - (rc.embedding <=> CAST(:embedding_array AS vector)) AS similarity
+                    rc.brand,
+                    1 - (rc.embedding <=> (SELECT vec FROM search_vector)) AS similarity
                 FROM rag_chunks rc
                 INNER JOIN catalog_documents cd
                   ON (rc.metadata->>'catalog_id')::bigint = cd.id
                 WHERE {where_sql}
                   AND cd.is_active = true
                   AND cd.status = 'ready'
-                ORDER BY rc.embedding <=> CAST(:embedding_array AS vector)
+                ORDER BY rc.embedding <=> (SELECT vec FROM search_vector)
                 LIMIT :top_k
             """
-
-        # Log the WHERE clause to debug
-        logger.info("RAG where_sql: '%s'", where_sql)
-        logger.debug("RAG params keys: %s", list(params.keys()))
 
         try:
             rows = self._session.execute(text(sql), params).mappings().all()
         except Exception as e:
             logger.error("RAG search failed: %s", e)
-            # Print SQL for debugging
-            logger.error("RAG SQL was: %s...", sql[:300])
             raise
 
         logger.info("RAG search returned %d rows (top_k=%d)", len(rows), top_k)
