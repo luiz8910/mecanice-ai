@@ -37,8 +37,8 @@ def test_create_app_uses_cors_origins_from_env(monkeypatch):
         if middleware.cls is CORSMiddleware
     )
 
-    assert cors_middleware.options["allow_origins"] == [
+    assert cors_middleware.kwargs["allow_origins"] == [
         "https://front-end-mecanice.vercel.app",
         "http://localhost:5173",
     ]
-    assert cors_middleware.options["allow_credentials"] is True
+    assert cors_middleware.kwargs["allow_credentials"] is True
