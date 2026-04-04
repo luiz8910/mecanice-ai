@@ -52,3 +52,15 @@ class QuoteError(DomainError):
 
 class SolicitationError(DomainError):
 	"""Generic solicitation-related error."""
+
+
+class ManufacturerNotFound(NotFoundError):
+	pass
+
+
+class VehicleNotFound(NotFoundError):
+	pass
+
+
+class CatalogNotFound(NotFoundError):
+	pass

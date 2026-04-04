@@ -10,8 +10,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_CORS_ORIGINS = (
     "https://front-end-mecanice.vercel.app",
+    "https://mecanice-ai.vercel.app",
+    "http://localhost:3000",
     "http://localhost:5173",
 )
+LOCAL_CORS_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 
 def parse_cors_origins(value: str | None) -> list[str]:
@@ -98,6 +101,9 @@ class Settings(BaseSettings):
     # ── RAG ───────────────────────────────────────────────────────────
     RAG_TOP_K: int = 6
     RAG_MAX_CHUNKS_IN_PROMPT: int = 10
+
+    # ── Catalog upload ────────────────────────────────────────────────
+    CATALOG_UPLOAD_DIR: str = "uploads/catalogs"
 
 
 settings = Settings()

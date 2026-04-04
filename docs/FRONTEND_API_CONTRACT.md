@@ -503,3 +503,456 @@ Formato:
 - `/threads` é a lista principal do mecânico
 - sugestões podem vir vazias mesmo com `generate_suggestions=true`
 - a UI não deve depender de tempo real por socket
+
+---
+
+## Catálogo de veículos e montadoras
+
+Usado principalmente no formulário de criação de thread pelo mecânico (seleção de veículo).
+Os endpoints `GET` **não exigem autenticação**. Mutações (`POST`, `PATCH`, `DELETE`) exigem `X-Admin-Token`.
+
+---
+
+### `GET /manufacturers`
+
+Lista todas as montadoras ativas.
+
+Query params:
+
+| Param | Tipo | Descrição |
+|---|---|---|
+| `search` | string | Busca parcial no nome (ex: `volk`) |
+| `country_of_origin` | string | Filtro exato por país (ex: `Japan`) |
+| `limit` | int (default 100) | Paginação |
+| `offset` | int (default 0) | Paginação |
+
+Response `200`:
+```json
+[
+  {
+    "id": 1,
+    "name": "Volkswagen",
+    "country_of_origin": "Germany",
+    "created_at": "2026-03-28T00:00:00Z",
+    "updated_at": "2026-03-28T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Fiat",
+    "country_of_origin": "Italy",
+    "created_at": "2026-03-28T00:00:00Z",
+    "updated_at": "2026-03-28T00:00:00Z"
+  }
+]
+```
+
+---
+
+### `GET /manufacturers/{manufacturer_id}`
+
+Detalhe de uma montadora.
+
+Response `200`:
+```json
+{
+  "id": 1,
+  "name": "Volkswagen",
+  "country_of_origin": "Germany",
+  "created_at": "2026-03-28T00:00:00Z",
+  "updated_at": "2026-03-28T00:00:00Z"
+}
+```
+
+---
+
+### `POST /manufacturers` (admin)
+
+Header obrigatório: `X-Admin-Token: <token>`
+
+Request:
+```json
+{
+  "name": "Toyota",
+  "country_of_origin": "Japan"
+}
+```
+
+Response `201`: mesmo shape do GET detalhe.
+
+Erros:
+- `409` — nome já existe
+
+---
+
+### `PATCH /manufacturers/{manufacturer_id}` (admin)
+
+Campos opcionais (envia apenas o que mudar):
+```json
+{
+  "name": "Toyota Brasil",
+  "country_of_origin": "Japan"
+}
+```
+
+Response `200`: mesmo shape do GET detalhe.
+
+---
+
+### `DELETE /manufacturers/{manufacturer_id}` (admin)
+
+Response `204 No Content`.
+
+---
+
+### `GET /vehicles`
+
+Lista veículos com JOIN na montadora. Todos os filtros são opcionais e combináveis.
+
+Query params:
+
+| Param | Tipo | Descrição |
+|---|---|---|
+| `search` | string | Busca parcial no **modelo** ou **nome da montadora** (ex: `gol`, `fiat`) |
+| `manufacturer_id` | int | Todos os veículos de uma montadora |
+| `body_type` | string | `hatchback` \| `sedan` \| `pickup` \| `suv` \| `minivan` \| `coupe` \| `van` \| `wagon` \| `convertible` |
+| `fuel_type` | string | `flex` \| `gasoline` \| `diesel` \| `hybrid` \| `electric` \| `cng` |
+| `country_of_origin` | string | Filtrar pelo país da montadora (ex: `Japan`) |
+| `year` | int | Modelos **em produção em** determinado ano (ex: `2015`) |
+| `year_from` | int | Ano de início de produção mínimo (ex: `2010`) |
+| `year_to` | int | Ano de início de produção máximo (ex: `2020`) |
+| `is_current` | bool | `true` = apenas em produção hoje; `false` = apenas descontinuados |
+| `engine` | string | Busca parcial no motor (ex: `1.0`, `turbo`, `2.0 TSI`) |
+| `limit` | int (default 100) | Paginação |
+| `offset` | int (default 0) | Paginação |
+
+Response `200`:
+```json
+[
+  {
+    "id": 1,
+    "manufacturer_id": 1,
+    "manufacturer_name": "Volkswagen",
+    "country_of_origin": "Germany",
+    "model": "Gol",
+    "model_year_start": 2008,
+    "model_year_end": 2022,
+    "body_type": "hatchback",
+    "fuel_type": "flex",
+    "engine_displacement": "1.0",
+    "created_at": "2026-03-28T00:00:00Z",
+    "updated_at": "2026-03-28T00:00:00Z"
+  },
+  {
+    "id": 14,
+    "manufacturer_id": 1,
+    "manufacturer_name": "Volkswagen",
+    "country_of_origin": "Germany",
+    "model": "T-Cross",
+    "model_year_start": 2019,
+    "model_year_end": null,
+    "body_type": "suv",
+    "fuel_type": "flex",
+    "engine_displacement": "1.0 TSI",
+    "created_at": "2026-03-28T00:00:00Z",
+    "updated_at": "2026-03-28T00:00:00Z"
+  }
+]
+```
+
+Nota: `model_year_end: null` indica modelo ainda em produção.
+
+---
+
+### `GET /vehicles/{vehicle_id}`
+
+Detalhe de um veículo.
+
+Response `200`: mesmo shape do item do array acima.
+
+---
+
+### `POST /vehicles` (admin)
+
+Header obrigatório: `X-Admin-Token: <token>`
+
+Request:
+```json
+{
+  "manufacturer_id": 1,
+  "model": "Polo Track",
+  "model_year_start": 2023,
+  "model_year_end": null,
+  "body_type": "hatchback",
+  "fuel_type": "flex",
+  "engine_displacement": "1.0 MPI"
+}
+```
+
+Campos obrigatórios: `manufacturer_id`, `model`, `model_year_start`, `body_type`.
+`fuel_type` padrão: `"flex"`.
+
+Response `201`: shape completo com `manufacturer_name` e `country_of_origin`.
+
+Erros:
+- `404` — `manufacturer_id` não existe
+
+---
+
+### `PATCH /vehicles/{vehicle_id}` (admin)
+
+Todos os campos opcionais:
+```json
+{
+  "model_year_end": 2025,
+  "engine_displacement": "1.0 TSI"
+}
+```
+
+Response `200`: shape completo.
+
+---
+
+### `DELETE /vehicles/{vehicle_id}` (admin)
+
+Response `204 No Content`.
+
+---
+
+### Padrão de erros (veículos e montadoras)
+
+| Código | Quando |
+|---|---|
+| `404` | ID não encontrado ou soft-deleted |
+| `409` | Nome de montadora duplicado |
+| `422` | Payload inválido (ex: `model_year_end < model_year_start`) |
+
+Formato:
+```json
+{ "detail": "manufacturer 99 not found" }
+```
+
+---
+
+### Uso recomendado no formulário de criação de thread
+
+Fluxo sugerido para o seletor de veículo:
+
+1. `GET /manufacturers?limit=100` → popula dropdown de montadora
+2. Ao selecionar montadora → `GET /vehicles?manufacturer_id={id}&is_current=true` → popula dropdown de modelo
+3. Ao digitar → `GET /vehicles?manufacturer_id={id}&search={termo}` (debounce 300ms)
+4. Filtro opcional de ano: `GET /vehicles?manufacturer_id={id}&year={ano_do_veiculo}`
+
+O front deve gravar `manufacturer_name`, `model` e `model_year_start` no payload de criação da thread
+(campos `vehicle_brand`, `vehicle_model`, `vehicle_year`).
+
+---
+
+## Área admin — Catálogos de peças (RAG)
+
+Todos os endpoints desta seção exigem `X-Admin-Token: <token>`.
+
+O fluxo tem duas etapas:
+1. **Gerenciar catálogos** — upload de PDFs, acompanhar ingestão, remover.
+2. **Consultar catálogos (RAG)** — pergunta em linguagem natural; a API retorna resposta gerada pelo LLM + trechos-fonte.
+
+---
+
+### `POST /admin/catalogs`
+
+Faz upload de um PDF de catálogo de peças. A ingestão (extração de texto, chunking e geração de embeddings) ocorre em background — o endpoint responde `202` imediatamente.
+
+Header obrigatório: `X-Admin-Token: <token>`
+Content-Type: `multipart/form-data`
+
+Campos do form:
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `file` | File (PDF) | sim | Arquivo PDF do catálogo |
+| `manufacturer_id` | int | não | ID da montadora relacionada |
+| `description` | string | não | Texto livre (ex: "Fiat Uno 1984–1997") |
+
+Response `202`:
+```json
+{
+  "id": 1,
+  "manufacturer_id": 2,
+  "original_filename": "catalogo-fiat-uno.pdf",
+  "file_size_bytes": 30408704,
+  "description": "Fiat Uno 1984–1997",
+  "status": "pending",
+  "page_count": null,
+  "chunk_count": null,
+  "error_message": null,
+  "created_at": "2026-03-28T12:00:00Z",
+  "updated_at": "2026-03-28T12:00:00Z"
+}
+```
+
+Valores de `status`:
+
+| Valor | Significado |
+|---|---|
+| `pending` | Aguardando início da ingestão |
+| `processing` | Extraindo texto e gerando embeddings |
+| `ready` | Pronto para consulta RAG |
+| `error` | Falha na ingestão (ver `error_message`) |
+
+Erros:
+- `400` — arquivo enviado não é PDF
+
+---
+
+### `GET /admin/catalogs`
+
+Lista todos os catálogos cadastrados.
+
+Header obrigatório: `X-Admin-Token: <token>`
+
+Query params:
+
+| Param | Tipo | Descrição |
+|---|---|---|
+| `manufacturer_id` | int | Filtrar por montadora |
+| `status` | string | Filtrar por status (`pending`, `processing`, `ready`, `error`) |
+| `limit` | int (default 100) | Paginação |
+| `offset` | int (default 0) | Paginação |
+
+Response `200`:
+```json
+[
+  {
+    "id": 1,
+    "manufacturer_id": 2,
+    "original_filename": "catalogo-fiat-uno.pdf",
+    "file_size_bytes": 30408704,
+    "description": "Fiat Uno 1984–1997",
+    "status": "ready",
+    "page_count": 412,
+    "chunk_count": 1380,
+    "error_message": null,
+    "created_at": "2026-03-28T12:00:00Z",
+    "updated_at": "2026-03-28T12:05:30Z"
+  }
+]
+```
+
+---
+
+### `GET /admin/catalogs/{catalog_id}`
+
+Detalhe de um catálogo. Usar para polling de status pós-upload.
+
+Header obrigatório: `X-Admin-Token: <token>`
+
+Response `200`: mesmo shape do item do array acima.
+
+Erros:
+- `404` — catálogo não encontrado
+
+---
+
+### `DELETE /admin/catalogs/{catalog_id}`
+
+Remove o catálogo, todos os seus chunks vetorizados e o arquivo PDF do disco.
+
+Header obrigatório: `X-Admin-Token: <token>`
+
+Response `204 No Content`.
+
+Erros:
+- `404` — catálogo não encontrado
+
+---
+
+### `POST /admin/catalogs/query`
+
+Consulta RAG: busca trechos relevantes nos catálogos ingeridos e gera uma resposta via LLM.
+
+Header obrigatório: `X-Admin-Token: <token>`
+Content-Type: `application/json`
+
+Request:
+```json
+{
+  "query": "Qual o número da peça do filtro de óleo do Fiat Uno 1.0 1994?",
+  "manufacturer_id": 2,
+  "catalog_id": null,
+  "top_k": 6
+}
+```
+
+Campos:
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `query` | string (3–1000 chars) | sim | Pergunta em linguagem natural |
+| `manufacturer_id` | int | não | Restringe a busca a catálogos desta montadora |
+| `catalog_id` | int | não | Restringe a busca a um único catálogo |
+| `top_k` | int (1–20, default 6) | não | Quantidade de trechos recuperados |
+
+Response `200`:
+```json
+{
+  "answer": "O filtro de óleo do Fiat Uno 1.0 1994 tem o número de peça 7700274199. Ele está listado na página 87 do catálogo como compatível com motores Fire 1.0 8V do período 1991–1997.",
+  "sources": [
+    {
+      "catalog_id": 1,
+      "filename": "catalogo-fiat-uno.pdf",
+      "page": 87,
+      "chunk_text": "Filtro de óleo completo - Cod. 7700274199 - Motor Fire 1.0 8V ...",
+      "similarity": 0.91
+    },
+    {
+      "catalog_id": 1,
+      "filename": "catalogo-fiat-uno.pdf",
+      "page": 88,
+      "chunk_text": "Ver também filtro de combustível Cod. 7700868142 ...",
+      "similarity": 0.74
+    }
+  ]
+}
+```
+
+Campos da resposta:
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `answer` | string | Resposta gerada pelo LLM com base nos trechos |
+| `sources` | array | Trechos usados como contexto |
+| `sources[].catalog_id` | int | ID do catálogo de origem |
+| `sources[].filename` | string | Nome original do PDF |
+| `sources[].page` | int | Página do PDF onde o trecho foi extraído |
+| `sources[].chunk_text` | string | Até 300 chars do trecho usado |
+| `sources[].similarity` | float (0–1) | Score de similaridade coseno |
+
+Nota: se não houver catálogos ingeridos ou nenhum trecho relevante for encontrado, `answer` trará uma mensagem explicando a ausência e `sources` será `[]`.
+
+---
+
+### Polling recomendado após upload
+
+Após o `POST /admin/catalogs`, fazer polling em `GET /admin/catalogs/{id}` a cada **3 segundos** até que `status` seja `ready` ou `error`. Parar o polling em ambos os casos.
+
+```
+POST /admin/catalogs  →  status: "pending"
+          ↓ (3s)
+GET /admin/catalogs/1  →  status: "processing"
+          ↓ (3s)
+GET /admin/catalogs/1  →  status: "ready"  ✓
+```
+
+---
+
+### Erros esperados (catálogos)
+
+| Código | Quando |
+|---|---|
+| `400` | Arquivo não é PDF |
+| `404` | Catálogo não encontrado |
+| `422` | `query` muito curta/longa, `top_k` fora do intervalo |
+
+Formato padrão:
+```json
+{ "detail": "mensagem de erro" }
+```

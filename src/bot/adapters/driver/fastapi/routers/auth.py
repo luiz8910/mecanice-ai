@@ -29,6 +29,7 @@ router = APIRouter(tags=["auth"])
 
 
 def _encode_token(principal: dict) -> str:
+    now = datetime.now(timezone.utc)
     payload = {
         "user_id": principal["user_id"],
         "role": principal["role"],
@@ -37,8 +38,8 @@ def _encode_token(principal: dict) -> str:
         "mechanic_id": principal.get("mechanic_id"),
         "name": principal["name"],
         "email": principal["email"],
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(hours=8)).timestamp()),
     }
     return jwt.encode(payload, settings.SELLER_JWT_SECRET, algorithm="HS256")
 
