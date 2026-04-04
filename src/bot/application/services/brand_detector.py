@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 
 # Major automotive parts brands
@@ -60,7 +61,10 @@ def detect_brand_from_filename(filename: str) -> str | None:
     if not filename:
         return None
 
-    filename_lower = filename.lower()
+    # Strip the file extension so ".pdf" suffix isn't mistakenly treated as
+    # separator characters in the regex pattern
+    basename = os.path.splitext(filename)[0]
+    basename_lower = basename.lower()
 
     # Try exact matches with flexible separators
     for brand, keywords in KNOWN_BRANDS.items():
@@ -70,11 +74,11 @@ def detect_brand_from_filename(filename: str) -> str | None:
             # - underscores, hyphens, spaces before/after
             # - OR at word boundary within CamelCase (e.g., CatalogoNGK)
             patterns = [
-                r'(?:^|[\s_\-])' + re.escape(keyword) + r'(?:[\s_\-\.pdf]|$)',  # separated
+                r'(?:^|[\s_\-])' + re.escape(keyword) + r'(?:$|[\s_\-])',  # separated
                 r'(?:^|[a-z])' + re.escape(keyword) + r'(?:[A-Z\d_\-\.]|$)',  # CamelCase (e.g., ...NGK_)
             ]
             for pattern in patterns:
-                if re.search(pattern, filename_lower, re.IGNORECASE):
+                if re.search(pattern, basename_lower, re.IGNORECASE):
                     return brand.upper()
 
     return None
