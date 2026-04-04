@@ -36,12 +36,13 @@ async def seller_login(
 ):
     result = repo.authenticate(body.email, body.password)
 
+    now = datetime.now(timezone.utc)
     payload = {
         "vendor_id": result["seller_id"],
         "store_id": result["autopart_id"],
         "email": result["email"],
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=8),
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(hours=8)).timestamp()),
     }
     token = jwt.encode(payload, settings.SELLER_JWT_SECRET, algorithm="HS256")
 

@@ -12,11 +12,12 @@ CREATE TABLE IF NOT EXISTS rag_chunks (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Index for vector search (cosine)
--- Note: ivfflat requires ANALYZE and enough rows to be effective.
+-- Index for vector search (cosine distance)
+-- HNSW is preferred over IVFFlat: no training required, no empty-list
+-- issues with small datasets, and correct results with ORDER BY + LIMIT.
 CREATE INDEX IF NOT EXISTS rag_chunks_embedding_idx
   ON rag_chunks
-  USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+  USING hnsw (embedding vector_cosine_ops);
 
 -- Helpful btree index for filtering
 CREATE INDEX IF NOT EXISTS rag_chunks_source_id_idx ON rag_chunks(source_id);
