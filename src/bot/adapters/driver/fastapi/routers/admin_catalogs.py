@@ -68,12 +68,14 @@ def _upload_dir() -> Path:
 
 def _ingest_background(catalog_id: int, pdf_path: str) -> None:
     """Run async ingestion in a new event loop (for threading)."""
+    loop: asyncio.AbstractEventLoop | None = None
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(_ingest_background_async(catalog_id, pdf_path))
     finally:
-        loop.close()
+        if loop is not None:
+            loop.close()
 
 
 async def _ingest_background_async(catalog_id: int, pdf_path: str) -> None:
