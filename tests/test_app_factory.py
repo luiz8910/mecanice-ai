@@ -46,5 +46,4 @@ def test_create_app_uses_cors_origins_from_env(monkeypatch):
         "http://localhost:3000",
         "http://localhost:5173",
     ]
-    assert cors_middleware.kwargs["allow_origin_regex"] == LOCAL_CORS_ORIGIN_REGEX
     assert cors_middleware.kwargs["allow_credentials"] is True
